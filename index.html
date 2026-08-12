@@ -1078,16 +1078,16 @@
   function chooseQuestionTarget(focus){
     ensureConceptRegistry();
 
-    const undiscovered=state.sourceChunks.filter(c=>!c.conceptsKnown);
+    const undiscovered=state.sourceChunks.filter(c=>c && !c.conceptsKnown);
 
     // Phase 1: discover each source section once, then build its compact
     // concept inventory as part of the same question call. No extra API call.
     if(undiscovered.length){
-      const idx=undiscovered.reduce((best,c)=>{
-        if(best===null) return c.id;
+      const idx=undiscovered.reduce((bestId,c)=>{
+        if(bestId===null) return c.id;
         const d1=Math.abs(c.id-state.sourceCursor);
-        const d2=Math.abs(best.id-state.sourceCursor);
-        return d1<d2 ? c.id : best.id;
+        const d2=Math.abs(bestId-state.sourceCursor);
+        return d1<d2 ? c.id : bestId;
       },null);
       const primary=state.sourceChunks.find(c=>c.id===idx) || undiscovered[0];
       return {
