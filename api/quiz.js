@@ -1,30 +1,48 @@
-// Study Hall — server-side AI gateway
-// API keys stay on Vercel and are NEVER sent to the browser.
+// api/quiz.js
+// Study Hall — Multi-provider AI gateway
+//
+// Provider priority:
+//   Groq key 1 → Groq key 2 → Groq key 3
+//   → Cerebras key 1 → Cerebras key 2
+//   → Gemini
+//   → Mistral key 1 → Mistral key 2
+//   → Z.AI key 1 → Z.AI key 2
+//   → NVIDIA NIM
+//
+// Each API key is treated as an independent account/quota.
 //
 // Supported Vercel environment variables:
 //
-//   GROQ_API_KEYS
-//   GROQ_API_KEYS2
-//   GROQ_API_KEYS_3
-//   CEREBRAS_API_KEYS
-//   GEMINI_API_KEY
-//   MISTRAL_API_KEY_1
-//   MISTRAL_API_KEY_2
-//   ZAI_KEY_1
-//   ZAI_KEY_2
-//   NIM_API_KEY
+// GROQ_API_KEYS
+// GROQ_API_KEYS2
+// GROQ_API_KEYS_3
+//
+// CEREBRAS_API_KEYS
+// CEREBRAS_API_KEY_1
+// CEREBRAS_API_KEY_2
+//
+// GEMINI_API_KEY
+//
+// MISTRAL_API_KEY_1
+// MISTRAL_API_KEY_2
+//
+// ZAI_KEY_1
+// ZAI_KEY_2
+//
+// NIM_API_KEY
 //
 // Optional model overrides:
-//
-//   GROQ_MODEL
-//   CEREBRAS_MODEL
-//   GEMINI_MODEL
-//   MISTRAL_MODEL
-//   ZAI_MODEL
-//   NIM_MODEL
+// GROQ_MODEL
+// CEREBRAS_MODEL
+// GEMINI_MODEL
+// MISTRAL_MODEL
+// ZAI_MODEL
+// NIM_MODEL
 
-let cursor = 0;
-const providerHealth = new Map();
+
+// ============================================================
+// DEFAULT MODELS
+// ============================================================
 
 const DEFAULTS = {
   groq: "openai/gpt-oss-20b",
@@ -35,6 +53,63 @@ const DEFAULTS = {
   nim: "nvidia/nemotron-3-super-120b-a12b"
 };
 
+
+// ============================================================
+// TEMPORARY ACCOUNT COOLDOWNS
+// ============================================================
+
+const providerHealth = new Map();
+
+function accountId(item) {
+  return `${item.provider}:${item.key.slice(-12)}`;
+}
+
+function isTemporarilyBlocked(item) {
+  const until = providerHealth.get(
+    accountId(item)
+  );
+
+  return Boolean(
+    until &&
+    until > Date.now()
+  );
+}
+
+function markProvider(item, error) {
+  const status = Number(
+    error?.status || 0
+  );
+
+  let cooldown = 0;
+
+  if (status === 429) {
+    cooldown = 45_000;
+  } else if (status === 402) {
+    cooldown = 60_000;
+  } else if (status === 401) {
+    cooldown = 90_000;
+  } else if (status === 403) {
+    cooldown = 120_000;
+  } else if (
+    [408, 409, 500, 502, 503, 504]
+      .includes(status)
+  ) {
+    cooldown = 15_000;
+  }
+
+  if (cooldown) {
+    providerHealth.set(
+      accountId(item),
+      Date.now() + cooldown
+    );
+  }
+}
+
+
+// ============================================================
+// ENVIRONMENT VARIABLE HELPERS
+// ============================================================
+
 function splitValue(value) {
   return String(value || "")
     .split(",")
@@ -43,259 +118,232 @@ function splitValue(value) {
 }
 
 function envKeys(names) {
-  const out = [];
+  const keys = [];
   const seen = new Set();
 
   for (const name of names) {
-    for (const key of splitValue(process.env[name])) {
+    for (const key of splitValue(
+      process.env[name]
+    )) {
       if (!seen.has(key)) {
         seen.add(key);
-        out.push(key);
+        keys.push(key);
       }
     }
   }
 
-  return out;
+  return keys;
 }
 
-// Supports numbered variables such as:
-// MISTRAL_API_KEY_1
-// MISTRAL_API_KEY_2
-// ZAI_KEY_1
-// ZAI_KEY_2
 function numberedKeys(prefix) {
-  const out = [];
+  const keys = [];
   const seen = new Set();
 
-  for (const [name, value] of Object.entries(process.env)) {
-    if (!name.startsWith(prefix)) continue;
-    if (!value) continue;
+  for (
+    const [name, value]
+    of Object.entries(process.env)
+  ) {
+    if (!name.startsWith(prefix)) {
+      continue;
+    }
 
-    for (const key of splitValue(value)) {
+    if (!value) {
+      continue;
+    }
+
+    for (
+      const key
+      of splitValue(value)
+    ) {
       if (!seen.has(key)) {
         seen.add(key);
-        out.push(key);
+        keys.push(key);
       }
     }
   }
 
-  return out;
+  return keys;
 }
 
-function model(name, fallback) {
-  return String(process.env[name] || fallback).trim();
-}
-
-function addProvider(list, provider, keys, modelName) {
-  for (const key of keys) {
-    list.push({
-      provider,
-      key,
-      model: modelName
-    });
-  }
-}
-
-function providers() {
-  const list = [];
-
-  // --------------------------------------------------
-  // GROQ
-  // --------------------------------------------------
-
-  addProvider(
-    list,
-    "groq",
-    envKeys([
-      "GROQ_API_KEYS",
-      "GROQ_API_KEYS2",
-      "GROQ_API_KEYS_3"
-    ]),
-    model("GROQ_MODEL", DEFAULTS.groq)
-  );
-
-  // --------------------------------------------------
-  // CEREBRAS
-  // --------------------------------------------------
-
-  addProvider(
-    list,
-    "cerebras",
-    envKeys([
-      "CEREBRAS_API_KEYS"
-    ]).concat(
-      numberedKeys("CEREBRAS_API_KEY_")
-    ),
-    model("CEREBRAS_MODEL", DEFAULTS.cerebras)
-  );
-
-  // --------------------------------------------------
-  // GEMINI
-  // --------------------------------------------------
-
-  addProvider(
-    list,
-    "gemini",
-    envKeys([
-      "GEMINI_API_KEY",
-      "GEMINI_API_KEYS"
-    ]).concat(
-      numberedKeys("GEMINI_API_KEY_")
-    ),
-    model("GEMINI_MODEL", DEFAULTS.gemini)
-  );
-
-  // --------------------------------------------------
-  // MISTRAL
-  // --------------------------------------------------
-
-  addProvider(
-    list,
-    "mistral",
-    envKeys([
-      "MISTRAL_API_KEYS"
-    ]).concat(
-      numberedKeys("MISTRAL_API_KEY_")
-    ),
-    model("MISTRAL_MODEL", DEFAULTS.mistral)
-  );
-
-  // --------------------------------------------------
-  // Z.AI
-  // --------------------------------------------------
-
-  addProvider(
-    list,
-    "zai",
-    envKeys([
-      "ZAI_KEYS",
-      "ZAI_API_KEYS"
-    ]).concat(
-      numberedKeys("ZAI_KEY_")
-    ),
-    model("ZAI_MODEL", DEFAULTS.zai)
-  );
-
-  // --------------------------------------------------
-  // NVIDIA NIM
-  // --------------------------------------------------
-
-  addProvider(
-    list,
-    "nim",
-    envKeys([
-      "NIM_API_KEY",
-      "NIM_API_KEYS"
-    ]).concat(
-      numberedKeys("NIM_API_KEY_")
-    ),
-    model("NIM_MODEL", DEFAULTS.nim)
-  );
-
-  // Deduplicate provider/key/model combinations.
-  const seen = new Set();
-
-  return list.filter(item => {
-    const id =
-      `${item.provider}:${item.model}:${item.key}`;
-
-    if (seen.has(id)) return false;
-
-    seen.add(id);
-    return true;
-  });
+function getModel(
+  envName,
+  fallback
+) {
+  return String(
+    process.env[envName] ||
+    fallback
+  ).trim();
 }
 
 
-// --------------------------------------------------
-// PROVIDER HEALTH / COOLDOWN
-// --------------------------------------------------
+// ============================================================
+// PROVIDER GROUPS
+// ============================================================
+//
+// IMPORTANT:
+//
+// Every key is preserved as its own account.
+//
+// We do NOT round-robin between providers.
+//
+// We exhaust all Groq accounts first,
+// then move to Cerebras, etc.
+// ============================================================
 
-function providerId(item) {
-  return `${item.provider}:${item.model}:${item.key.slice(-8)}`;
-}
-
-function isTemporarilyBlocked(item) {
-  const until = providerHealth.get(providerId(item));
-
-  return Boolean(
-    until &&
-    until > Date.now()
-  );
-}
-
-function markProvider(item, err) {
-  const status = Number(err?.status || 0);
-  const id = providerId(item);
-
-  if (status === 429) {
-    providerHealth.set(
-      id,
-      Date.now() + 45_000
-    );
-  }
-
-  else if (status === 402) {
-    providerHealth.set(
-      id,
-      Date.now() + 60_000
-    );
-  }
-
-  else if (status === 401) {
-    providerHealth.set(
-      id,
-      Date.now() + 90_000
-    );
-  }
-
-  else if (status === 403) {
-    providerHealth.set(
-      id,
-      Date.now() + 120_000
-    );
-  }
-
-  else if (
-    [408, 409, 500, 502, 503, 504]
-      .includes(status)
-  ) {
-    providerHealth.set(
-      id,
-      Date.now() + 15_000
-    );
-  }
-}
-
-function isRetryable(err) {
+function getProviderGroups() {
   return [
-    400,
-    401,
-    402,
-    403,
-    404,
-    408,
-    409,
-    429,
-    500,
-    502,
-    503,
-    504
-  ].includes(
-    Number(err?.status || 0)
+
+    // --------------------------------------------------------
+    // GROQ
+    // --------------------------------------------------------
+
+    {
+      provider: "groq",
+
+      keys: envKeys([
+        "GROQ_API_KEYS",
+        "GROQ_API_KEYS2",
+        "GROQ_API_KEYS_3"
+      ]),
+
+      model: getModel(
+        "GROQ_MODEL",
+        DEFAULTS.groq
+      )
+    },
+
+
+    // --------------------------------------------------------
+    // CEREBRAS
+    // --------------------------------------------------------
+
+    {
+      provider: "cerebras",
+
+      keys: envKeys([
+        "CEREBRAS_API_KEYS"
+      ]).concat(
+        numberedKeys(
+          "CEREBRAS_API_KEY_"
+        )
+      ),
+
+      model: getModel(
+        "CEREBRAS_MODEL",
+        DEFAULTS.cerebras
+      )
+    },
+
+
+    // --------------------------------------------------------
+    // GEMINI
+    // --------------------------------------------------------
+
+    {
+      provider: "gemini",
+
+      keys: envKeys([
+        "GEMINI_API_KEY",
+        "GEMINI_API_KEYS"
+      ]).concat(
+        numberedKeys(
+          "GEMINI_API_KEY_"
+        )
+      ),
+
+      model: getModel(
+        "GEMINI_MODEL",
+        DEFAULTS.gemini
+      )
+    },
+
+
+    // --------------------------------------------------------
+    // MISTRAL
+    // --------------------------------------------------------
+
+    {
+      provider: "mistral",
+
+      keys: envKeys([
+        "MISTRAL_API_KEYS"
+      ]).concat(
+        numberedKeys(
+          "MISTRAL_API_KEY_"
+        )
+      ),
+
+      model: getModel(
+        "MISTRAL_MODEL",
+        DEFAULTS.mistral
+      )
+    },
+
+
+    // --------------------------------------------------------
+    // Z.AI
+    // --------------------------------------------------------
+
+    {
+      provider: "zai",
+
+      keys: envKeys([
+        "ZAI_KEYS",
+        "ZAI_API_KEYS"
+      ]).concat(
+        numberedKeys(
+          "ZAI_KEY_"
+        )
+      ),
+
+      model: getModel(
+        "ZAI_MODEL",
+        DEFAULTS.zai
+      )
+    },
+
+
+    // --------------------------------------------------------
+    // NVIDIA NIM
+    // --------------------------------------------------------
+
+    {
+      provider: "nim",
+
+      keys: envKeys([
+        "NIM_API_KEY",
+        "NIM_API_KEYS"
+      ]).concat(
+        numberedKeys(
+          "NIM_API_KEY_"
+        )
+      ),
+
+      model: getModel(
+        "NIM_MODEL",
+        DEFAULTS.nim
+      )
+    }
+
+  ].filter(
+    group =>
+      group.keys.length > 0
   );
 }
+
+
+// ============================================================
+// UTILITIES
+// ============================================================
 
 function sleep(ms) {
   return new Promise(
-    resolve => setTimeout(resolve, ms)
+    resolve => setTimeout(
+      resolve,
+      ms
+    )
   );
 }
-
-
-// --------------------------------------------------
-// FETCH WITH TIMEOUT
-// --------------------------------------------------
 
 async function fetchWithTimeout(
   url,
@@ -315,26 +363,30 @@ async function fetchWithTimeout(
       url,
       {
         ...options,
-        signal: controller.signal
+        signal:
+          controller.signal
       }
     );
-  }
 
-  catch (err) {
-    if (err?.name === "AbortError") {
-      const e = new Error(
-        "Provider request timed out."
-      );
+  } catch (error) {
 
-      e.status = 408;
+    if (
+      error?.name ===
+      "AbortError"
+    ) {
+      const timeoutError =
+        new Error(
+          "Provider request timed out."
+        );
 
-      throw e;
+      timeoutError.status = 408;
+
+      throw timeoutError;
     }
 
-    throw err;
-  }
+    throw error;
 
-  finally {
+  } finally {
     clearTimeout(timer);
   }
 }
@@ -342,61 +394,64 @@ async function fetchWithTimeout(
 async function safeJson(response) {
   try {
     return await response.json();
-  }
-
-  catch (_) {
+  } catch {
     return {};
   }
 }
 
 function providerError(
-  name,
+  provider,
   status,
   data
 ) {
-  const msg =
+  const message =
     data?.error?.message ||
     data?.error?.type ||
     data?.error?.status ||
     data?.message ||
     `HTTP ${status}`;
 
-  const e = new Error(
-    `${name} ${status}: ${msg}`
-  );
+  const error =
+    new Error(
+      `${provider} ${status}: ${message}`
+    );
 
-  e.status = Number(status);
-  e.provider = name;
+  error.status =
+    Number(status);
 
-  return e;
+  error.provider =
+    provider;
+
+  return error;
 }
 
 function ensureContent(
-  name,
+  provider,
   content
 ) {
   if (
     !content ||
     !String(content).trim()
   ) {
-    const e = new Error(
-      `${name} returned an empty response.`
-    );
+    const error =
+      new Error(
+        `${provider} returned an empty response.`
+      );
 
-    e.status = 502;
-    e.provider = name;
+    error.status = 502;
+    error.provider =
+      provider;
 
-    throw e;
+    throw error;
   }
 
   return String(content);
 }
 
 
-// --------------------------------------------------
+// ============================================================
 // OPENAI-COMPATIBLE PROVIDERS
-// Cerebras / Mistral / Z.AI / NVIDIA
-// --------------------------------------------------
+// ============================================================
 
 async function callOpenAICompatible({
   providerName,
@@ -404,9 +459,7 @@ async function callOpenAICompatible({
   key,
   modelName,
   system,
-  userPrompt,
-  extraHeaders = {},
-  extraBody = {}
+  userPrompt
 }) {
 
   const response =
@@ -420,13 +473,13 @@ async function callOpenAICompatible({
             "application/json",
 
           "Authorization":
-            `Bearer ${key}`,
-
-          ...extraHeaders
+            `Bearer ${key}`
         },
 
         body: JSON.stringify({
-          model: modelName,
+
+          model:
+            modelName,
 
           messages: [
             {
@@ -440,13 +493,14 @@ async function callOpenAICompatible({
             }
           ],
 
-          temperature: 0.55,
+          temperature:
+            0.5,
 
-          max_tokens: 800,
+          max_tokens:
+            800,
 
-          stream: false,
-
-          ...extraBody
+          stream:
+            false
         })
       }
     );
@@ -471,9 +525,9 @@ async function callOpenAICompatible({
 }
 
 
-// --------------------------------------------------
+// ============================================================
 // GROQ
-// --------------------------------------------------
+// ============================================================
 
 async function callGroq(
   item,
@@ -484,7 +538,11 @@ async function callGroq(
   const url =
     "https://api.groq.com/openai/v1/chat/completions";
 
-  // First attempt: JSON mode.
+
+  // ----------------------------------------------------------
+  // FIRST ATTEMPT — JSON MODE
+  // ----------------------------------------------------------
+
   const first =
     await fetchWithTimeout(
       url,
@@ -500,7 +558,9 @@ async function callGroq(
         },
 
         body: JSON.stringify({
-          model: item.model,
+
+          model:
+            item.model,
 
           messages: [
             {
@@ -514,12 +574,15 @@ async function callGroq(
             }
           ],
 
-          temperature: 0.55,
+          temperature:
+            0.5,
 
-          max_completion_tokens: 800,
+          max_completion_tokens:
+            800,
 
           response_format: {
-            type: "json_object"
+            type:
+              "json_object"
           }
         })
       }
@@ -528,43 +591,49 @@ async function callGroq(
   let data =
     await safeJson(first);
 
-  const failedJsonGeneration =
+
+  // ----------------------------------------------------------
+  // GROQ JSON VALIDATION FAILURE
+  // ----------------------------------------------------------
+  //
+  // We've seen Groq occasionally return 400 because the
+  // structured generation validator rejects an otherwise
+  // valid generation.
+  //
+  // Retry the SAME account once without response_format
+  // before abandoning that account.
+  // ----------------------------------------------------------
+
+  const errorText =
+    String(
+      data?.error?.message ||
+      ""
+    ).toLowerCase();
+
+  const errorCode =
+    String(
+      data?.error?.code ||
+      ""
+    ).toLowerCase();
+
+  const jsonGenerationFailure =
     first.status === 400 &&
     (
-      String(
-        data?.error?.message || ""
+      errorText.includes(
+        "failed to validate json"
+      ) ||
+
+      errorText.includes(
+        "failed_generation"
+      ) ||
+
+      errorCode.includes(
+        "failed_generation"
       )
-        .toLowerCase()
-        .includes(
-          "failed to validate json"
-        )
-
-      ||
-
-      String(
-        data?.error?.message || ""
-      )
-        .toLowerCase()
-        .includes(
-          "failed_generation"
-        )
-
-      ||
-
-      String(
-        data?.error?.code || ""
-      )
-        .toLowerCase()
-        .includes(
-          "failed_generation"
-        )
     );
 
-  // Important:
-  // We've repeatedly seen this exact Groq failure.
-  // Don't make the user press Try Again.
-  // Retry the same provider without JSON mode.
-  if (failedJsonGeneration) {
+
+  if (jsonGenerationFailure) {
 
     const retry =
       await fetchWithTimeout(
@@ -581,7 +650,9 @@ async function callGroq(
           },
 
           body: JSON.stringify({
-            model: item.model,
+
+            model:
+              item.model,
 
             messages: [
               {
@@ -591,13 +662,16 @@ async function callGroq(
 
               {
                 role: "user",
-                content: userPrompt
+                content:
+                  `${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON. Do not include markdown fences or commentary.`
               }
             ],
 
-            temperature: 0.45,
+            temperature:
+              0.4,
 
-            max_completion_tokens: 800
+            max_completion_tokens:
+              800
           })
         }
       );
@@ -621,6 +695,11 @@ async function callGroq(
     );
   }
 
+
+  // ----------------------------------------------------------
+  // NORMAL GROQ ERROR
+  // ----------------------------------------------------------
+
   if (!first.ok) {
     throw providerError(
       "Groq",
@@ -628,6 +707,7 @@ async function callGroq(
       data
     );
   }
+
 
   return ensureContent(
     "Groq",
@@ -638,9 +718,9 @@ async function callGroq(
 }
 
 
-// --------------------------------------------------
+// ============================================================
 // CEREBRAS
-// --------------------------------------------------
+// ============================================================
 
 async function callCerebras(
   item,
@@ -649,14 +729,18 @@ async function callCerebras(
 ) {
 
   return callOpenAICompatible({
-    providerName: "Cerebras",
+
+    providerName:
+      "Cerebras",
 
     url:
       "https://api.cerebras.ai/v1/chat/completions",
 
-    key: item.key,
+    key:
+      item.key,
 
-    modelName: item.model,
+    modelName:
+      item.model,
 
     system,
 
@@ -665,9 +749,9 @@ async function callCerebras(
 }
 
 
-// --------------------------------------------------
+// ============================================================
 // MISTRAL
-// --------------------------------------------------
+// ============================================================
 
 async function callMistral(
   item,
@@ -676,14 +760,18 @@ async function callMistral(
 ) {
 
   return callOpenAICompatible({
-    providerName: "Mistral",
+
+    providerName:
+      "Mistral",
 
     url:
       "https://api.mistral.ai/v1/chat/completions",
 
-    key: item.key,
+    key:
+      item.key,
 
-    modelName: item.model,
+    modelName:
+      item.model,
 
     system,
 
@@ -692,9 +780,9 @@ async function callMistral(
 }
 
 
-// --------------------------------------------------
+// ============================================================
 // Z.AI
-// --------------------------------------------------
+// ============================================================
 
 async function callZai(
   item,
@@ -703,47 +791,18 @@ async function callZai(
 ) {
 
   return callOpenAICompatible({
-    providerName: "Z.AI",
+
+    providerName:
+      "Z.AI",
 
     url:
       "https://api.z.ai/api/paas/v4/chat/completions",
 
-    key: item.key,
+    key:
+      item.key,
 
-    modelName: item.model,
-
-    system,
-
-    userPrompt,
-
-    extraHeaders: {
-      "Accept-Language":
-        "en-US,en"
-    }
-  });
-}
-
-
-// --------------------------------------------------
-// NVIDIA NIM
-// --------------------------------------------------
-
-async function callNim(
-  item,
-  system,
-  userPrompt
-) {
-
-  return callOpenAICompatible({
-    providerName:
-      "NVIDIA NIM",
-
-    url:
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-
-    key: item.key,
-
-    modelName: item.model,
+    modelName:
+      item.model,
 
     system,
 
@@ -752,9 +811,40 @@ async function callNim(
 }
 
 
-// --------------------------------------------------
+// ============================================================
+// NVIDIA NIM
+// ============================================================
+
+async function callNim(
+  item,
+  system,
+  userPrompt
+) {
+
+  return callOpenAICompatible({
+
+    providerName:
+      "NVIDIA NIM",
+
+    url:
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+
+    key:
+      item.key,
+
+    modelName:
+      item.model,
+
+    system,
+
+    userPrompt
+  });
+}
+
+
+// ============================================================
 // GEMINI
-// --------------------------------------------------
+// ============================================================
 
 async function callGemini(
   item,
@@ -763,7 +853,9 @@ async function callGemini(
 ) {
 
   const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(item.model)}:generateContent`;
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+      item.model
+    )}:generateContent`;
 
   const response =
     await fetchWithTimeout(
@@ -780,30 +872,36 @@ async function callGemini(
         },
 
         body: JSON.stringify({
+
           systemInstruction: {
             parts: [
               {
-                text: system
+                text:
+                  system
               }
             ]
           },
 
           contents: [
             {
-              role: "user",
+              role:
+                "user",
 
               parts: [
                 {
-                  text: userPrompt
+                  text:
+                    userPrompt
                 }
               ]
             }
           ],
 
           generationConfig: {
-            temperature: 0.55,
+            temperature:
+              0.5,
 
-            maxOutputTokens: 800,
+            maxOutputTokens:
+              800,
 
             responseMimeType:
               "application/json"
@@ -827,7 +925,8 @@ async function callGemini(
     data?.candidates?.[0]
       ?.content?.parts
       ?.map(
-        part => part?.text || ""
+        part =>
+          part?.text || ""
       )
       .join("");
 
@@ -838,9 +937,9 @@ async function callGemini(
 }
 
 
-// --------------------------------------------------
+// ============================================================
 // PROVIDER DISPATCH
-// --------------------------------------------------
+// ============================================================
 
 async function callProvider(
   item,
@@ -848,7 +947,9 @@ async function callProvider(
   userPrompt
 ) {
 
-  switch (item.provider) {
+  switch (
+    item.provider
+  ) {
 
     case "groq":
       return callGroq(
@@ -892,116 +993,132 @@ async function callProvider(
         userPrompt
       );
 
-    default:
-      throw new Error(
-        `Unsupported provider: ${item.provider}`
-      );
+    default: {
+      const error =
+        new Error(
+          `Unsupported provider: ${item.provider}`
+        );
+
+      error.status = 500;
+
+      throw error;
+    }
   }
 }
 
 
-// --------------------------------------------------
-// MAIN HANDLER
-// --------------------------------------------------
+// ============================================================
+// MAIN ROUTER
+// ============================================================
+//
+// THIS IS THE IMPORTANT PART:
+//
+// Provider 1:
+//   Groq account 1
+//   Groq account 2
+//   Groq account 3
+//
+// THEN:
+//
+// Provider 2:
+//   Cerebras account 1
+//   Cerebras account 2
+//
+// THEN:
+//
+// Gemini
+//
+// THEN:
+//
+// Mistral account 1
+// Mistral account 2
+//
+// etc.
+// ============================================================
 
-async function handler(
-  req,
-  res
+async function callAI(
+  system,
+  userPrompt
 ) {
 
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "POST only."
-    });
+  const groups =
+    getProviderGroups();
+
+  if (!groups.length) {
+    throw new Error(
+      "No AI provider API keys are configured."
+    );
   }
-
-  const pool =
-    providers();
-
-  if (!pool.length) {
-
-    return res.status(500).json({
-      error:
-        "No AI provider keys are configured. Add your provider keys to Vercel Environment Variables."
-    });
-  }
-
-  const body =
-    req.body || {};
-
-  const system =
-    String(body.system || "");
-
-  const userPrompt =
-    String(body.userPrompt || "");
-
-  if (!system || !userPrompt) {
-
-    return res.status(400).json({
-      error:
-        "Missing AI request content."
-    });
-  }
-
-  // Hard protection against accidentally
-  // turning this into an unrestricted proxy.
-
-  if (
-    system.length > 20_000 ||
-    userPrompt.length > 30_000
-  ) {
-
-    return res.status(413).json({
-      error:
-        "Request is too large."
-    });
-  }
-
-  const start =
-    cursor++ % pool.length;
 
   let lastError =
     null;
 
-  let attemptedAny =
-    false;
 
-  // --------------------------------------------------
-  // PASS 1 + PASS 2
-  // --------------------------------------------------
+  // ==========================================================
+  // PROVIDER ORDER
+  // ==========================================================
 
   for (
-    let round = 0;
-    round < 2;
-    round++
+    const group
+    of groups
   ) {
 
+    console.log(
+      `[Study Hall] ${group.provider}: ${group.keys.length} account(s) configured`
+    );
+
+
+    // ========================================================
+    // ACCOUNT ORDER
+    // ========================================================
+
     for (
-      let offset = 0;
-      offset < pool.length;
-      offset++
+      let keyIndex = 0;
+      keyIndex < group.keys.length;
+      keyIndex++
     ) {
 
-      const item =
-        pool[
-          (start + offset) %
-          pool.length
-        ];
+      const key =
+        group.keys[keyIndex];
 
-      // Skip providers currently known
-      // to be rate-limited/unavailable.
+      const item = {
+        provider:
+          group.provider,
+
+        key,
+
+        model:
+          group.model
+      };
+
+
+      // ------------------------------------------------------
+      // TEMPORARY COOLDOWN
+      // ------------------------------------------------------
 
       if (
-        round === 0 &&
-        isTemporarilyBlocked(item)
+        isTemporarilyBlocked(
+          item
+        )
       ) {
+
+        console.log(
+          `[Study Hall] ${group.provider} account ${keyIndex + 1}: cooldown`
+        );
+
         continue;
       }
 
-      attemptedAny =
-        true;
+
+      // ------------------------------------------------------
+      // TRY ACCOUNT
+      // ------------------------------------------------------
 
       try {
+
+        console.log(
+          `[Study Hall] Trying ${group.provider} account ${keyIndex + 1}/${group.keys.length}`
+        );
 
         const content =
           await callProvider(
@@ -1010,110 +1127,221 @@ async function handler(
             userPrompt
           );
 
-        return res.status(200).json({
+
+        console.log(
+          `[Study Hall] SUCCESS — ${group.provider} account ${keyIndex + 1}`
+        );
+
+
+        return {
           content,
 
           provider:
-            item.provider,
+            group.provider,
 
           model:
-            item.model
-        });
+            group.model,
+
+          keyIndex:
+            keyIndex + 1
+        };
 
       }
 
-      catch (err) {
+
+      // ------------------------------------------------------
+      // ACCOUNT FAILED
+      // ------------------------------------------------------
+
+      catch (error) {
 
         lastError =
-          err;
+          error;
+
+        console.warn(
+          `[Study Hall] FAILED — ${group.provider} account ${keyIndex + 1}:`,
+          error?.message ||
+          error
+        );
+
 
         markProvider(
           item,
-          err
+          error
         );
 
-        // Provider errors → fail over.
-        // Unexpected application errors →
-        // don't blindly hammer every provider.
 
-        if (
-          !isRetryable(err)
-        ) {
-          break;
-        }
+        // IMPORTANT:
+        //
+        // NEVER immediately jump to another provider.
+        //
+        // Always try the next account belonging to
+        // the CURRENT provider first.
+        //
+
+        continue;
       }
     }
 
-    if (
-      round === 0 &&
-      attemptedAny
-    ) {
-      await sleep(150);
-    }
+
+    console.warn(
+      `[Study Hall] All ${group.provider} accounts exhausted. Moving to next provider.`
+    );
   }
 
 
-  // --------------------------------------------------
-  // FINAL PROBE
-  // --------------------------------------------------
-
-  // This catches cases where every provider was
-  // temporarily marked unavailable on a warm
-  // Vercel instance.
-
-  for (
-    const item of pool
-  ) {
-
-    try {
-
-      const content =
-        await callProvider(
-          item,
-          system,
-          userPrompt
-        );
-
-      return res.status(200).json({
-        content,
-
-        provider:
-          item.provider,
-
-        model:
-          item.model
-      });
-
-    }
-
-    catch (err) {
-
-      lastError =
-        err;
-    }
-  }
-
-
-  // --------------------------------------------------
+  // ==========================================================
   // EVERYTHING FAILED
-  // --------------------------------------------------
+  // ==========================================================
 
-  const detail =
-    lastError?.message
-      ? ` Last provider error: ${lastError.message}`
-      : "";
+  const error =
+    new Error(
+      "All configured AI providers are currently unavailable, rate-limited, or temporarily rejecting generation."
+    );
 
-  return res.status(503).json({
-    error:
-      "All configured AI providers are currently unavailable, rate-limited, or temporarily rejecting generation." +
-      detail
-  });
+  error.status =
+    503;
+
+  error.lastProviderError =
+    lastError?.message ||
+    null;
+
+  throw error;
 }
 
 
-// --------------------------------------------------
+// ============================================================
+// VERCEL HANDLER
+// ============================================================
+
+async function handler(
+  req,
+  res
+) {
+
+  if (
+    req.method !==
+    "POST"
+  ) {
+
+    return res
+      .status(405)
+      .json({
+        error:
+          "POST only."
+      });
+  }
+
+
+  const body =
+    req.body || {};
+
+
+  const system =
+    String(
+      body.system || ""
+    );
+
+  const userPrompt =
+    String(
+      body.userPrompt || ""
+    );
+
+
+  if (
+    !system ||
+    !userPrompt
+  ) {
+
+    return res
+      .status(400)
+      .json({
+        error:
+          "Missing AI request content."
+      });
+  }
+
+
+  // Prevent accidentally sending enormous
+  // requests to every provider.
+
+  if (
+    system.length >
+      20_000 ||
+    userPrompt.length >
+      30_000
+  ) {
+
+    return res
+      .status(413)
+      .json({
+        error:
+          "Request is too large."
+      });
+  }
+
+
+  try {
+
+    const result =
+      await callAI(
+        system,
+        userPrompt
+      );
+
+
+    return res
+      .status(200)
+      .json({
+
+        content:
+          result.content,
+
+        provider:
+          result.provider,
+
+        model:
+          result.model,
+
+        // Useful for debugging.
+        // This does NOT expose the API key.
+        keyIndex:
+          result.keyIndex
+      });
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "[Study Hall] AI generation failed:",
+      error
+    );
+
+
+    return res
+      .status(
+        error?.status === 503
+          ? 503
+          : 500
+      )
+      .json({
+
+        error:
+          error?.message ||
+          "AI generation failed.",
+
+        lastProviderError:
+          error?.lastProviderError ||
+          null
+      });
+  }
+}
+
+
+// ============================================================
 // TOP-LEVEL SAFETY WRAPPER
-// --------------------------------------------------
+// ============================================================
 
 export default async function safeHandler(
   req,
@@ -1129,20 +1357,23 @@ export default async function safeHandler(
 
   }
 
-  catch (err) {
+  catch (error) {
 
     console.error(
-      "Study Hall API unhandled error:",
-      err
+      "[Study Hall] Unhandled API error:",
+      error
     );
 
-    return res.status(500).json({
-      error:
-        "Server-side quiz engine error: " +
-        (
-          err?.message ||
-          "Unknown error"
-        )
-    });
+    return res
+      .status(500)
+      .json({
+
+        error:
+          "Server-side quiz engine error.",
+
+        detail:
+          error?.message ||
+          "Unknown error."
+      });
   }
 }
