@@ -1023,7 +1023,7 @@
 
   function addConceptInventory(chunkId, inventory){
     ensureConceptRegistry();
-    const chunk=state.sourceChunks.find(c=>c.id===chunkId);
+    const chunk=state.sourceChunks.find(c=>c && c.id===chunkId);
     if(!chunk || !Array.isArray(inventory)) return;
 
     inventory.slice(0,6).forEach((raw, idx)=>{
@@ -1106,7 +1106,8 @@
 
     if(uncovered.length){
       const target=chooseBestConcept(uncovered,state.lastConceptId) || uncovered[0];
-      const primary=state.sourceChunks.find(c=>c.id===target.chunkId);
+      const primary=state.sourceChunks.find(c=>c && c.id===target.chunkId) || state.sourceChunks[0];
+      if(!primary) throw new Error("Unable to locate the source section for the next concept.");
       return {
         primary,
         selected:focus==="application" ? selectAdjacent(primary) : [primary],
@@ -1119,7 +1120,10 @@
     // concepts already answered correctly.
     const all=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
     const target=chooseBestConcept(all,state.lastConceptId) || chooseBestConcept(all,null);
-    const primary=state.sourceChunks.find(c=>c.id===target.chunkId);
+    const primary=target
+      ? (state.sourceChunks.find(c=>c && c.id===target.chunkId) || state.sourceChunks[0])
+      : state.sourceChunks[0];
+    if(!primary) throw new Error("Unable to locate a source section for reinforcement.");
     return {
       primary,
       selected:focus==="application" ? selectAdjacent(primary) : [primary],
@@ -1139,7 +1143,7 @@
   }
 
 function formatSelectedSource(chunks){
-    return chunks.map((c,i)=>
+    return chunks.filter(Boolean).map((c,i)=>
       "[SOURCE SECTION "+(i+1)+"]\nFILE: "+c.file+"\nPAGE/SLIDE: "+c.page+
       "\nCONTENT:\n"+c.content
     ).join("\n\n");
@@ -1227,9 +1231,9 @@ function formatSelectedSource(chunks){
     );
 
     const plan=chooseQuestionTarget(focus);
-    const selected=plan.selected;
-    const primary=plan.primary;
-    if(!selected.length) throw new Error("No source sections were indexed. Re-upload or paste your study material.");
+    const selected=Array.isArray(plan.selected) ? plan.selected.filter(Boolean) : [];
+    const primary=plan.primary || selected[0];
+    if(!primary || !selected.length) throw new Error("No source sections were indexed. Re-upload or paste your study material.");
 
     const sourceForQuestion=formatSelectedSource(selected);
     const primaryConcepts=getConceptsForChunk(primary.id);
@@ -1437,9 +1441,12 @@ function formatSelectedSource(chunks){
     state.answered = false;
     nextBtn.classList.add("hidden");
     renderLoading();
-    try {
-      const q = await generateQuestion();
-      state.currentQuestion = q;
+    let lastError = null;
+
+    for(let attempt=0; attempt<2; attempt++){
+      try {
+        const q = await generateQuestion();
+        state.currentQuestion = q;
       state.askedTexts.push(q.question);
       if (!Array.isArray(state.askedConcepts)) state.askedConcepts = [];
       state.askedConcepts.push({
@@ -1457,7 +1464,8 @@ function formatSelectedSource(chunks){
       // Discovery is folded into the question-generation call: the model
       // returns a tiny important-concept inventory alongside the first
       // question for a source section. This avoids a separate indexing call.
-      if (q._primaryChunkId != null && Array.isArray(q.conceptInventory) && q.conceptInventory.length) {
+      if (q._primaryChunkId != null && state.sourceChunks.some(c=>c && c.id===q._primaryChunkId) &&
+          Array.isArray(q.conceptInventory) && q.conceptInventory.length) {
         addConceptInventory(q._primaryChunkId, q.conceptInventory);
       }
 
@@ -1480,16 +1488,19 @@ function formatSelectedSource(chunks){
       }
       state.questionNumber += 1;
 
-      updateCoverageUI();
-      renderQuestion(q);
-    } catch (err) {
-      // Never hide the provider's real error. This makes auth, CORS, model,
-      // quota and request-format problems diagnosable.
-      const message = err && err.message
-        ? err.message
-        : "Unknown AI engine error. The app will automatically rotate through the configured providers.";
-      renderError(message, loadNextQuestion);
+        updateCoverageUI();
+        renderQuestion(q);
+        return;
+      } catch(err) {
+        lastError=err;
+        if(attempt===0) await new Promise(r=>setTimeout(r,250));
+      }
     }
+
+    const message = lastError && lastError.message
+      ? lastError.message
+      : "Unknown AI engine error. The app will automatically rotate through the configured providers.";
+    renderError(message, loadNextQuestion);
   }
 
   function escapeHtml(s){
