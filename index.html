@@ -2184,8 +2184,11 @@ function formatSelectedSource(chunks){
       let correct=q.options[q.correctIndex].trim();
 
       // Do not allow the question stem to literally reveal the answer.
-      if(phraseOverlap(qText,correct)>=4 || qText.toLowerCase().includes(correct.toLowerCase())){
+      if(qText.toLowerCase().includes(correct.toLowerCase()) && correct.length>=12){
         return "The question gives away the correct answer in its wording.";
+      }
+      if(phraseOverlap(qText,correct)>=6){
+        return "The question repeats too much of the correct answer.";
       }
 
       // Distractors should be plausible and parallel rather than obvious by length/style.
@@ -2205,7 +2208,7 @@ function formatSelectedSource(chunks){
       let stemWords=new Set(normalizedWords(qText).filter(w=>w.length>=5));
       let correctWords=normalizedWords(correct).filter(w=>w.length>=5);
       let shared=correctWords.filter(w=>stemWords.has(w)).length;
-      if(shared>=Math.max(3,Math.ceil(correctWords.length*0.65))){
+      if(correctWords.length>=5 && shared>=Math.max(4,Math.ceil(correctWords.length*0.85))){
         return "The correct option repeats too much wording from the question.";
       }
     }
@@ -2316,12 +2319,13 @@ function formatSelectedSource(chunks){
 
     let last=null;
     let lastValidationError="";
-    for(let attempt=0;attempt<2;attempt++){
+    for(let attempt=0;attempt<3;attempt++){
       let retry="";
       if(attempt>0){
         retry=
           "\nThe previous candidate failed a quality check: "+lastValidationError+
           "\nGenerate a NEW candidate for the SAME target concept. "+
+          "Keep the question concise and return complete valid JSON. "+
           "It must require genuine thinking/conceptual clarity, must not reveal the answer in the wording, and must use plausible, parallel answer choices if it is an MCQ.";
       }
 
@@ -2369,7 +2373,11 @@ function formatSelectedSource(chunks){
       return parsed;
     }
 
-    throw new Error("Could not generate a high-quality question after automatic retries. Please try again.");
+    throw new Error(
+      "Could not generate a high-quality question after automatic retries."+
+      (lastValidationError ? " Last quality check: " + lastValidationError : "")+
+      " Please try again."
+    );
   }
 
 
