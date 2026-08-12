@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Hall — quiz from your own notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ECE6D6;
+    --paper-raised:#F5F0E4;
+    --ink:#26261F;
+    --pencil:#5B5A4E;
+    --pencil-faint:#8C8A7B;
+    --red-pen:#A6392D;
+    --red-pen-dim:#C97367;
+    --green-check:#3F6B4A;
+    --folder:#C9A66B;
+    --folder-dark:#A9803F;
+    --rule-blue:#7C93AC;
+    --card-border: rgba(38,38,31,0.14);
+    --shadow: 0 1px 0 rgba(38,38,31,0.06);
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:28px 20px 64px;
+  }
+
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:10px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .masthead h1{ font-size:26px; font-weight:700; margin:0; letter-spacing:0.2px; }
+  .masthead .tag{ font-size:11px; color:var(--pencil); text-transform:uppercase; letter-spacing:1.5px; }
+
+  .folder-tab{
+    display:inline-block;
+    background:var(--folder);
+    color:#3A2C10;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    padding:5px 12px 4px;
+    border-radius:4px 4px 0 0;
+    margin-bottom:-1px;
+    position:relative;
+    top:1px;
+  }
+
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--card-border);
+    border-radius:0 6px 6px 6px;
+    padding:20px;
+    margin-bottom:22px;
+    box-shadow:var(--shadow);
+  }
+
+  label.field-label{
+    display:block;
+    font-size:11px;
+    font-family:'IBM Plex Mono', monospace;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--pencil);
+    margin-bottom:6px;
+  }
+
+  textarea, input[type="text"], input[type="password"]{
+    width:100%;
+    font-family:'Source Serif 4', Georgia, serif;
+    font-size:15px;
+    color:var(--ink);
+    background:
+      repeating-linear-gradient(var(--paper-raised), var(--paper-raised) 27px, rgba(124,147,172,0.35) 28px);
+    border:1px solid var(--card-border);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    line-height:28px;
+    resize:vertical;
+  }
+  input[type="text"], input[type="password"]{ line-height:normal; padding:9px 12px; background:var(--paper-raised); font-family:'IBM Plex Mono', monospace; font-size:13px; }
+  textarea:focus, input[type="text"]:focus, input[type="password"]:focus, select:focus{
+    outline:none;
+    border-color:var(--rule-blue);
+    box-shadow:0 0 0 2px rgba(124,147,172,0.25);
+  }
+
+  .upload-row{ display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
+  .file-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.4px;
+    background:var(--paper); border:1px solid var(--ink); border-radius:var(--radius);
+    padding:8px 14px; cursor:pointer; user-select:none;
+  }
+  .file-btn:hover{ background:#E2DBC7; }
+  input[type="file"]{ display:none; }
+  .file-status{ font-size:12px; color:var(--pencil); font-family:'IBM Plex Mono', monospace; line-height:1.5; }
+
+  .file-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip{
+    display:flex; align-items:center; gap:8px;
+    background:var(--paper); border:1px solid var(--card-border); border-radius:20px;
+    padding:5px 6px 5px 10px; font-family:'IBM Plex Mono', monospace; font-size:11.5px;
+  }
+  .chip img{ width:22px; height:22px; object-fit:cover; border-radius:4px; }
+  .chip .chip-remove{
+    width:18px; height:18px; border-radius:50%; border:none; background:var(--card-border);
+    color:var(--ink); cursor:pointer; font-size:12px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .chip .chip-remove:hover{ background:var(--red-pen-dim); color:#fff; }
+
+  .settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px; }
+  @media (max-width:520px){ .settings-grid{ grid-template-columns:1fr; } }
+
+  .choice-group{ display:flex; gap:8px; flex-wrap:wrap; }
+  .choice-pill{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.3px;
+    padding:8px 13px; border:1px solid var(--card-border); border-radius:20px;
+    background:var(--paper); cursor:pointer; color:var(--pencil); transition:border-color .15s;
+  }
+  .choice-pill.active{ border-color:var(--ink); color:var(--ink); background:#DED5B8; font-weight:600; }
+
+  select{
+    width:100%; font-family:'IBM Plex Mono', monospace; font-size:13px; padding:9px 10px;
+    border:1px solid var(--card-border); border-radius:var(--radius); background:var(--paper-raised); color:var(--ink);
+  }
+
+  .btn{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:0.5px; font-weight:600;
+    text-transform:uppercase; padding:12px 22px; border-radius:var(--radius);
+    border:1.5px solid var(--ink); background:var(--ink); color:var(--paper); cursor:pointer;
+    transition:transform .1s, opacity .15s;
+  }
+  .btn:hover{ opacity:0.88; }
+  .btn:active{ transform:scale(0.98); }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn.secondary{ background:transparent; color:var(--ink); }
+  .btn.danger{ border-color:var(--red-pen); color:var(--red-pen); background:transparent; }
+  .btn.small{ padding:8px 14px; font-size:11.5px; }
+  .btn.full{ width:100%; }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+
+  .error-note{ font-size:13px; color:var(--red-pen); font-family:'IBM Plex Mono', monospace; margin-top:10px; }
+
+  .key-row{ display:flex; gap:10px; align-items:center; }
+  .key-row input{ flex:1; }
+  .key-list{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .key-chip{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--paper); border:1px solid var(--card-border); border-radius:var(--radius);
+    padding:7px 10px; font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+  }
+  .key-chip .kc-remove{
+    border:none; background:none; color:var(--red-pen); cursor:pointer; font-size:12px; font-family:'IBM Plex Mono', monospace;
+  }
+  .provider-status{
+    margin-top:12px; font-size:12px; font-family:'IBM Plex Mono', monospace; color:var(--pencil);
+    padding:8px 10px; border-left:3px solid var(--rule-blue); background:rgba(124,147,172,0.09); border-radius:0 3px 3px 0;
+  }
+
+  .quiz-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .quiz-subject{ font-size:13px; color:var(--pencil); font-family:'IBM Plex Mono', monospace; }
+  .score-readout{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:600; }
+
+  .scantron{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+  .scantron .bubble{ width:16px; height:16px; border-radius:50%; border:1.5px solid var(--pencil-faint); background:transparent; }
+  .scantron .bubble.correct{ background:var(--green-check); border-color:var(--green-check); }
+  .scantron .bubble.incorrect{ background:var(--red-pen); border-color:var(--red-pen); }
+
+  .question-card{
+    position:relative; background:var(--paper-raised); border:1px solid var(--card-border);
+    border-radius:6px; padding:26px 24px; min-height:180px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .q-meta{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .q-badge{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    padding:3px 8px; border-radius:3px; border:1px solid var(--card-border); color:var(--pencil);
+  }
+  .q-text{ font-size:19px; line-height:1.5; margin:0 0 18px; }
+
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .option{
+    text-align:left; display:flex; gap:12px; align-items:flex-start; padding:12px 14px;
+    border:1px solid var(--card-border); border-radius:var(--radius); background:var(--paper);
+    cursor:pointer; font-family:'Source Serif 4', Georgia, serif; font-size:15.5px; color:var(--ink);
+    transition:border-color .12s, background .12s;
+  }
+  .option:hover:not(:disabled){ border-color:var(--ink); }
+  .option:disabled{ cursor:default; }
+  .option .letter{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--pencil); flex-shrink:0; }
+  .option.chosen-correct{
+    border:2px solid var(--green-check) !important;
+    background:var(--green-wash) !important;
+    color:var(--ink) !important;
+    box-shadow:0 0 0 2px var(--green-check);
+  }
+  .option.chosen-wrong{
+    border:2px solid var(--red-pen) !important;
+    background:var(--red-wash) !important;
+    color:var(--ink) !important;
+  }
+  .option.reveal-correct{
+    border:2px solid var(--green-check) !important;
+    background:var(--green-wash) !important;
+    color:var(--ink) !important;
+    box-shadow:0 0 0 2px rgba(63,107,74,.22);
+  }
+  .option.chosen-correct{
+    border:2px solid var(--green-check) !important;
+    background:var(--green-wash) !important;
+    color:var(--ink) !important;
+    box-shadow:0 0 0 2px rgba(63,107,74,.22);
+  }
+  .option.chosen-wrong{
+    border:2px solid var(--red-pen) !important;
+    background:var(--red-wash) !important;
+    color:var(--ink) !important;
+  }
+  .option .letter{
+    flex:0 0 30px;
+    width:30px;
+    min-width:30px;
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:700;
+    color:var(--pencil);
+  }
+  .option .option-text{
+    flex:1;
+    min-width:0;
+  }
+  .option .answer-state{
+    flex:0 0 auto;
+    margin-left:12px;
+    align-self:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    line-height:1.1;
+    font-weight:700;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:var(--green-check);
+    white-space:nowrap;
+  }
+  .option.reveal-correct .letter,
+  .option.chosen-correct .letter{
+    background:var(--green-check);
+    color:#fff;
+    border-radius:3px;
+    padding:3px 0;
+  }
+
+  /* Small caselet used for application questions */
+  .caselet{
+    margin:0 0 18px;
+    padding:15px 17px;
+    border:1px solid var(--card-border);
+    border-left:4px solid var(--rule-blue);
+    border-radius:5px;
+    background:rgba(124,147,172,.07);
+  }
+  .caselet-label{
+    display:block;
+    margin-bottom:7px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    line-height:1;
+    font-weight:700;
+    letter-spacing:1.1px;
+    text-transform:uppercase;
+    color:var(--rule-blue);
+  }
+  .caselet-text{
+    margin:0;
+    font-size:14px;
+    line-height:1.55;
+  }
+  .application-question{
+    margin-top:2px;
+  }
+
+  textarea.subjective-answer{ min-height:120px; margin-bottom:12px; }
+
+  .feedback{
+    margin-top:16px; padding:14px 16px; border-radius:var(--radius); border-left:3px solid var(--rule-blue);
+    background:rgba(124,147,172,0.09); font-size:14.5px; line-height:1.55;
+  }
+  .feedback.correct{ border-left-color:var(--green-check); background:rgba(63,107,74,0.08); }
+  .feedback.incorrect{ border-left-color:var(--red-pen); background:rgba(166,57,45,0.07); }
+  .feedback .verdict{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:1px;
+    font-weight:700; display:block; margin-bottom:5px;
+  }
+  .feedback.correct .verdict{ color:var(--green-check); }
+  .feedback.incorrect .verdict{ color:var(--red-pen); }
+
+  .stamp{
+    position:absolute; top:18px; right:22px; font-family:'IBM Plex Mono', monospace; font-weight:700;
+    font-size:15px; letter-spacing:2px; text-transform:uppercase; padding:7px 14px; border:3px solid;
+    border-radius:6px; transform:rotate(-9deg) scale(0.6); opacity:0; pointer-events:none;
+    animation:stamp-in .32s ease-out forwards;
+  }
+  .stamp.correct{ color:var(--green-check); border-color:var(--green-check); }
+  .stamp.incorrect{ color:var(--red-pen); border-color:var(--red-pen); }
+  @keyframes stamp-in{
+    0%{ opacity:0; transform:rotate(-9deg) scale(1.7); }
+    60%{ opacity:1; }
+    100%{ opacity:1; transform:rotate(-9deg) scale(1); }
+  }
+
+  .loading-line{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--pencil); display:flex; align-items:center; gap:10px; }
+  .pencil-spin{
+    width:14px; height:14px; border:2px solid var(--pencil-faint); border-top-color:var(--ink);
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .quiz-footer{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; flex-wrap:wrap; gap:10px; }
+
+  .results-card{ text-align:center; padding:40px 24px; background:var(--paper-raised); border:1px solid var(--card-border); border-radius:6px; }
+  .grade-stamp{
+    display:inline-block; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:52px;
+    color:var(--red-pen); border:5px solid var(--red-pen); border-radius:10px; padding:6px 26px;
+    transform:rotate(-6deg); margin-bottom:18px;
+  }
+  .results-score{ font-size:16px; color:var(--pencil); margin-bottom:24px; }
+  .breakdown{ text-align:left; max-width:520px; margin:0 auto 26px; display:flex; flex-direction:column; gap:8px; }
+  .breakdown-row{
+    display:flex; gap:10px; align-items:flex-start; font-size:14px; padding:8px 10px;
+    border-radius:var(--radius); background:var(--paper); border:1px solid var(--card-border);
+  }
+  .breakdown-row .mark{ font-family:'IBM Plex Mono', monospace; font-weight:700; flex-shrink:0; }
+  .breakdown-row.correct .mark{ color:var(--green-check); }
+  .breakdown-row.incorrect .mark{ color:var(--red-pen); }
+
+
+  .report-card{
+    background:var(--paper-raised); border:1px solid var(--card-border);
+    border-radius:6px; padding:28px 24px; box-shadow:var(--shadow);
+  }
+  .report-head{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:16px; flex-wrap:wrap; border-bottom:2px solid var(--ink);
+    padding-bottom:16px; margin-bottom:22px;
+  }
+  .report-head h2{ margin:0 0 5px; font-size:28px; }
+  .report-meta{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--pencil); }
+  .report-grade{
+    font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:32px;
+    border:3px solid var(--red-pen); color:var(--red-pen); padding:6px 14px;
+    border-radius:7px; transform:rotate(-4deg);
+  }
+  .report-stat-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px;
+  }
+  @media(max-width:560px){ .report-stat-grid{grid-template-columns:1fr;} }
+  .report-stat{
+    padding:13px 14px; background:var(--paper); border:1px solid var(--card-border);
+    border-radius:var(--radius);
+  }
+  .report-stat .label{
+    display:block; font-family:'IBM Plex Mono',monospace; font-size:10px;
+    text-transform:uppercase; letter-spacing:1px; color:var(--pencil);
+  }
+  .report-stat .value{ display:block; font-size:24px; font-weight:700; margin-top:4px; }
+  .report-section{ margin-top:28px; }
+  .report-section h3{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase;
+    letter-spacing:1px; border-bottom:1px solid var(--card-border); padding-bottom:8px;
+  }
+  .topic-row{
+    display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
+    padding:12px 0; border-bottom:1px solid var(--card-border);
+  }
+  .topic-name{ font-weight:600; }
+  .topic-page{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--pencil); }
+  .topic-advice{ grid-column:1/-1; font-size:13px; color:var(--pencil); line-height:1.45; }
+  .wrong-item{
+    padding:16px; margin-bottom:10px; background:var(--paper);
+    border:1px solid var(--card-border); border-radius:var(--radius);
+  }
+  .wrong-item .wrong-q{
+    font-weight:600; font-size:15px; line-height:1.45; margin-bottom:10px;
+  }
+  .wrong-item .wrong-answer, .wrong-item .correct-answer{
+    font-size:13.5px; line-height:1.5; margin-top:6px;
+  }
+  .wrong-label{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase;
+    letter-spacing:.8px; color:var(--pencil); font-weight:600;
+  }
+  .report-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
+
+  .hidden{ display:none !important; }
+  .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+  footer.credit{
+    text-align:center; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--pencil-faint);
+    margin-top:36px; line-height:1.8;
+  }
+  @media print{
+    body{ background:#fff; }
+    .wrap{ max-width:none; padding:0; }
+    .masthead, footer.credit{ display:none !important; }
+    #screen-results{ display:block !important; }
+    .report-actions{ display:none !important; }
+    .report-card{ border:none; box-shadow:none; padding:0; }
+  }
+
+
+  .option.reveal-correct .letter,
+  .option.chosen-correct .letter{
+    background:var(--green-check) !important;
+    color:#fff !important;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Study Hall</h1>
+    <span class="tag">quiz generator</span>
+  </div>
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <div id="screen-setup">
+
+    <span class="folder-tab">AI engine</span>
+    <div class="panel">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="q-badge">AI ENGINE</span>
+        <strong style="font-family:'Source Serif 4',Georgia,serif;">Study Hall AI Pool</strong>
+      </div>
+      <div class="provider-status" style="margin-top:10px;">
+        Connected. The app automatically uses the available AI providers configured by the site owner and switches providers when one reaches a limit.
+      </div>
+      <div class="file-status" style="margin-top:10px;">
+        You don't need an API key. Your study material stays in the browser; only the small source section needed for each question is sent to the AI engine.
+      </div>
+    </div>
+
+    <span class="folder-tab">Source material</span>
+    <div class="panel">
+      <label class="field-label" for="subjectInput">Subject (optional)</label>
+      <input type="text" id="subjectInput" placeholder="e.g. Cell biology, WWII, Contract law" style="font-family:'Source Serif 4', Georgia, serif; font-size:15px;">
+
+      <div style="height:14px;"></div>
+
+      <label class="field-label" for="sourceText">Paste your notes, textbook excerpt, or article</label>
+      <textarea id="sourceText" rows="8" placeholder="Paste the material you want to be quizzed on..."></textarea>
+
+      <div class="upload-row">
+        <label class="file-btn" for="fileInput">Upload files — PDF, Word, PowerPoint, TXT, or screenshots</label>
+        <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.pptx,.png,.jpg,.jpeg,.webp" multiple>
+      </div>
+      <div class="file-status" id="fileStatus"></div>
+      <div class="file-chips" id="fileChips"></div>
+    </div>
+
+    <span class="folder-tab">Quiz settings</span>
+    <div class="panel">
+      <div class="settings-grid">
+        <div>
+          <label class="field-label">Question type</label>
+          <div class="choice-group" id="qtypeGroup">
+            <button type="button" class="choice-pill active" data-val="mixed">Mixed</button>
+            <button type="button" class="choice-pill" data-val="mcq">Multiple choice</button>
+            <button type="button" class="choice-pill" data-val="subjective">Written answer</button>
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Focus</label>
+          <div class="choice-group" id="focusGroup">
+            <button type="button" class="choice-pill active" data-val="mixed">Mixed</button>
+            <button type="button" class="choice-pill" data-val="fact">Fact-based</button>
+            <button type="button" class="choice-pill" data-val="application">Application</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:16px;"></div>
+
+      <div style="max-width:220px;">
+        <label class="field-label" for="difficultySelect">Difficulty</label>
+        <select id="difficultySelect">
+          <option value="easy">Easy — recall</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard — deep dive</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn full" id="startBtn">Start quiz</button>
+      </div>
+      <div class="error-note hidden" id="setupError"></div>
+    </div>
+  </div>
+
+  <!-- ============ QUIZ SCREEN ============ -->
+  <div id="screen-quiz" class="hidden">
+    <div class="quiz-header">
+      <span class="quiz-subject" id="quizSubjectLabel"></span>
+      <span class="score-readout"><span id="scoreCorrect">0</span> / <span id="scoreTotal">0</span> correct</span>
+    </div>
+    <div class="scantron" id="scantron"></div>
+
+    <div class="question-card" id="questionCard"></div>
+
+    <div class="quiz-footer">
+      <button class="btn secondary" id="endQuizBtn">End quiz</button>
+      <button class="btn hidden" id="nextBtn">Next question</button>
+    </div>
+  </div>
+
+  <!-- ============ RESULTS SCREEN ============ -->
+  <div id="screen-results" class="hidden">
+    <div class="report-card" id="reportCard">
+      <div class="report-head">
+        <div>
+          <h2>Report Card</h2>
+          <div class="report-meta" id="reportSubject"></div>
+        </div>
+        <div class="report-grade" id="reportGrade">A+</div>
+      </div>
+
+      <div class="report-stat-grid">
+        <div class="report-stat"><span class="label">Score</span><span class="value" id="reportScore">0%</span></div>
+        <div class="report-stat"><span class="label">Correct</span><span class="value" id="reportCorrect">0 / 0</span></div>
+        <div class="report-stat"><span class="label">Needs review</span><span class="value" id="reportWrong">0</span></div>
+      </div>
+
+      <div class="report-section">
+        <h3>Topics to study</h3>
+        <div id="reportTopics"></div>
+      </div>
+
+      <div class="report-section">
+        <h3>Questions you got wrong</h3>
+        <div id="reportWrongQuestions"></div>
+      </div>
+
+      <div class="report-actions">
+        <button class="btn" id="downloadReportBtn">Download PDF report card</button>
+        <button class="btn secondary" id="retakeBtn">New round, same material</button>
+        <button class="btn secondary" id="newMaterialBtn">Start over with new material</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="credit">generated live from your material — nothing here is pre-written<br>designed by Sanskar Makhija | IIM Lucknow</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+
+  // ---------------- state ----------------
+  const state = {
+    sourceText: "",
+    sourceFiles: [],
+    sourceChunks: [],
+    sourceCursor: 0,
+    images: [],
+    subject: "",
+    qType: "mixed",
+    focus: "mixed",
+    difficulty: "medium",
+    currentQuestion: null,
+    askedTexts: [],
+    askedConcepts: [],
+    history: [],
+    reportTopics: [],
+    reportGenerated: false,
+    score: { correct: 0, total: 0 },
+    answered: false,
+    backendAI: true
+  };
+
+  // ---------------- element refs ----------------
+  const screenSetup = document.getElementById("screen-setup");
+  const screenQuiz = document.getElementById("screen-quiz");
+  const screenResults = document.getElementById("screen-results");
+
+  const subjectInput = document.getElementById("subjectInput");
+  const sourceText = document.getElementById("sourceText");
+  const fileInput = document.getElementById("fileInput");
+  const fileStatus = document.getElementById("fileStatus");
+  const fileChips = document.getElementById("fileChips");
+  const startBtn = document.getElementById("startBtn");
+  const setupError = document.getElementById("setupError");
+
+  const qtypeGroup = document.getElementById("qtypeGroup");
+  const focusGroup = document.getElementById("focusGroup");
+  const difficultySelect = document.getElementById("difficultySelect");
+
+  const quizSubjectLabel = document.getElementById("quizSubjectLabel");
+  const scoreCorrect = document.getElementById("scoreCorrect");
+  const scoreTotal = document.getElementById("scoreTotal");
+  const scantron = document.getElementById("scantron");
+  const questionCard = document.getElementById("questionCard");
+  const endQuizBtn = document.getElementById("endQuizBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  const reportSubject = document.getElementById("reportSubject");
+  const reportGrade = document.getElementById("reportGrade");
+  const reportScore = document.getElementById("reportScore");
+  const reportCorrect = document.getElementById("reportCorrect");
+  const reportWrong = document.getElementById("reportWrong");
+  const reportTopics = document.getElementById("reportTopics");
+  const reportWrongQuestions = document.getElementById("reportWrongQuestions");
+  const downloadReportBtn = document.getElementById("downloadReportBtn");
+  const retakeBtn = document.getElementById("retakeBtn");
+  const newMaterialBtn = document.getElementById("newMaterialBtn");
+
+  // ---------------- pill groups ----------------
+  function wirePillGroup(group, stateKey){
+    group.addEventListener("click", (e) => {
+      const btn = e.target.closest(".choice-pill");
+      if (!btn) return;
+      [...group.children].forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      state[stateKey] = btn.dataset.val;
+    });
+  }
+  wirePillGroup(qtypeGroup, "qType");
+  wirePillGroup(focusGroup, "focus");
+  difficultySelect.addEventListener("change", () => { state.difficulty = difficultySelect.value; });
+
+  // ---------------- file upload ----------------
+  fileInput.addEventListener("change", async () => {
+    const files = [...fileInput.files];
+    fileInput.value = "";
+    for (const file of files) {
+      await handleFile(file);
+    }
+  });
+
+  async function handleFile(file){
+    const lower = file.name.toLowerCase();
+    fileStatus.textContent = "Reading " + file.name + "...";
+    try {
+      if (lower.match(/\.(png|jpe?g|webp)$/)) {
+        if (!state.sourceFiles.includes(file.name)) state.sourceFiles.push(file.name);
+        const dataUrl = await readAsDataUrl(file);
+        const base64 = dataUrl.split(",")[1];
+        state.images.push({ mimeType: file.type || "image/png", data: base64, name: file.name, thumb: dataUrl });
+        renderFileChips();
+        fileStatus.textContent = "Added screenshot " + file.name + ". It'll be shown to the AI directly when writing questions.";
+        return;
+      }
+      if (!state.sourceFiles.includes(file.name)) state.sourceFiles.push(file.name);
+
+      let text = "";
+      if (lower.endsWith(".pdf")) {
+        text = await extractPdfText(file);
+      } else if (lower.endsWith(".docx")) {
+        text = "[DOCUMENT: " + file.name + " | PAGE NUMBERS NOT AVAILABLE FROM BROWSER TEXT EXTRACTION]\n" +
+               await extractDocxText(file);
+      } else if (lower.endsWith(".pptx")) {
+        text = await extractPptxText(file);
+      } else {
+        text = "[DOCUMENT: " + file.name + " | PAGE NUMBERS NOT AVAILABLE]\n" +
+               await file.text();
+      }
+      if (!text.trim()) {
+        fileStatus.textContent = "Couldn't find readable text in " + file.name + " — try pasting it instead.";
+        return;
+      }
+      sourceText.value = (sourceText.value ? sourceText.value + "\n\n" : "") + text.trim();
+      fileStatus.textContent = "Added " + file.name + " (" + text.trim().length.toLocaleString() + " characters).";
+    } catch (err) {
+      fileStatus.textContent = "Couldn't read " + file.name + " — try pasting the text instead.";
+    }
+  }
+
+  function readAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(new Error("read failed"));
+      r.readAsDataURL(file);
+    });
+  }
+
+  function renderFileChips(){
+    fileChips.innerHTML = "";
+    state.images.forEach((img, i) => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.innerHTML = '<img src="' + img.thumb + '" alt=""><span>' + escapeHtml(img.name) + '</span>';
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "chip-remove";
+      removeBtn.type = "button";
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", () => {
+        state.images.splice(i, 1);
+        renderFileChips();
+      });
+      chip.appendChild(removeBtn);
+      fileChips.appendChild(chip);
+    });
+  }
+
+  async function extractPdfText(file){
+    if (!window.pdfjsLib) throw new Error("pdf.js not loaded");
+    const buf = await file.arrayBuffer();
+    const doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
+    let out = "";
+    const maxPages = Math.min(doc.numPages, 40);
+    for (let i = 1; i <= maxPages; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(it => it.str).join(" ").trim();
+      if (pageText) {
+        out += "\n[DOCUMENT: " + file.name + " | PAGE " + i + "]\n" + pageText + "\n";
+      }
+      if (out.length > 24000) break;
+    }
+    return out;
+  }
+
+  async function extractDocxText(file){
+    if (!window.mammoth) throw new Error("mammoth not loaded");
+    const buf = await file.arrayBuffer();
+    const result = await window.mammoth.extractRawText({ arrayBuffer: buf });
+    return result.value || "";
+  }
+
+  async function extractPptxText(file){
+    if (!window.JSZip) throw new Error("jszip not loaded");
+    const buf = await file.arrayBuffer();
+    const zip = await window.JSZip.loadAsync(buf);
+    const slideFiles = Object.keys(zip.files)
+      .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
+      .sort((a, b) => {
+        const na = parseInt(a.match(/(\d+)/)[1], 10);
+        const nb = parseInt(b.match(/(\d+)/)[1], 10);
+        return na - nb;
+      });
+    let out = "";
+    for (const name of slideFiles) {
+      const xml = await zip.files[name].async("text");
+      const matches = xml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+      const slideText = matches.map(m => m.replace(/<a:t>|<\/a:t>/g, "")).join(" ").trim();
+      const slideNo = parseInt(name.match(/slide(\d+)\.xml/)[1], 10);
+      if (slideText) out += "\n[DOCUMENT: " + file.name + " | PAGE " + slideNo + " / SLIDE " + slideNo + "]\n" + slideText + "\n";
+      if (out.length > 20000) break;
+    }
+    return out;
+  }
+
+  // ---------------- AI provider layer ----------------
+  // API keys live on the server, never in the browser.
+  // The backend rotates across the owner's configured free-provider pool.
+  async function callAI(system, userPrompt, includeImages){
+    if(includeImages && state.images.length && !state.sourceText.trim()){
+      throw new Error(
+        "Screenshot-only quizzes need OCR before they can use the shared AI engine. Upload the PDF/PPTX/DOCX/TXT version or paste the text."
+      );
+    }
+
+    let res;
+    try {
+      res = await fetch("/api/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system,
+          userPrompt,
+          task: "quiz"
+        })
+      });
+    } catch (e) {
+      throw new Error(
+        "Couldn't reach the AI engine. If you're testing locally, run the app through the included server instead of opening the HTML file directly."
+      );
+    }
+
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
+
+    if (!res.ok) {
+      throw new Error(
+        data.error || ("AI engine error " + res.status + ". Try again.")
+      );
+    }
+
+    if (!data.content) throw new Error("The AI engine returned an empty response.");
+    return String(data.content);
+  }
+
+  // ---------------- JSON parsing ----------------
+  // Cerebras JSON mode normally returns valid JSON, but this also tolerates
+  // accidental markdown fences or surrounding text from a model.
+  function parseJsonLoose(text){
+    let t = String(text || "").trim();
+
+    t = t.replace(/^```json\s*/i, "")
+         .replace(/^```\s*/i, "")
+         .replace(/\s*```$/i, "")
+         .trim();
+
+    try {
+      return JSON.parse(t);
+    } catch (_) {
+      const firstObj = t.indexOf("{");
+      const lastObj = t.lastIndexOf("}");
+      if (firstObj !== -1 && lastObj > firstObj) {
+        return JSON.parse(t.substring(firstObj, lastObj + 1));
+      }
+
+      const firstArr = t.indexOf("[");
+      const lastArr = t.lastIndexOf("]");
+      if (firstArr !== -1 && lastArr > firstArr) {
+        return JSON.parse(t.substring(firstArr, lastArr + 1));
+      }
+
+      throw new Error("AI engine returned invalid JSON: " + t.slice(0, 300));
+    }
+  }
+
+  // ---------------- local source index / token-saving retrieval ----------------
+  // Indexing happens entirely in the browser, so it uses ZERO API tokens.
+  function buildSourceIndex(){
+    const raw = String(state.sourceText || "").trim();
+    state.sourceChunks = [];
+    state.sourceCursor = 0;
+    if (!raw) return;
+
+    const markerRe = /\[DOCUMENT:\s*([^\|\]]+?)\s*\|\s*PAGE\s*([^\]]+?)\]/gi;
+    const markers = [];
+    let m;
+    while ((m = markerRe.exec(raw)) !== null) {
+      markers.push({ start:m.index, end:markerRe.lastIndex, file:m[1].trim(), page:m[2].trim() });
+    }
+
+    if (markers.length) {
+      for (let i=0; i<markers.length; i++) {
+        const content = raw.slice(markers[i].end, i+1<markers.length ? markers[i+1].start : raw.length).trim();
+        if (!content) continue;
+        const maxChars=6500;
+        for (let pos=0; pos<content.length; pos+=maxChars) {
+          state.sourceChunks.push({
+            id:state.sourceChunks.length,
+            file:markers[i].file,
+            page:markers[i].page + (content.length>maxChars ? " (part "+(Math.floor(pos/maxChars)+1)+")" : ""),
+            content:content.slice(pos,pos+maxChars)
+          });
+        }
+      }
+    } else {
+      const maxChars=6500;
+      for (let pos=0; pos<raw.length; pos+=maxChars) {
+        state.sourceChunks.push({
+          id:state.sourceChunks.length,
+          file:state.sourceFiles.length===1 ? state.sourceFiles[0] : "Pasted notes",
+          page:"Not identified",
+          content:raw.slice(pos,pos+maxChars)
+        });
+      }
+    }
+
+    fileStatus.textContent =
+      "Indexed " + state.sourceChunks.length + " source section" +
+      (state.sourceChunks.length===1 ? "" : "s") +
+      ". Only the relevant section will be sent for each question.";
+  }
+
+  function keywordSet(s){
+    return new Set(String(s||"").toLowerCase().replace(/[^a-z0-9\s]/g," ")
+      .split(/\s+/).filter(w=>w.length>=5)
+      .filter(w=>!["question","answer","source","topic","strategic","alliance","alliances"].includes(w)));
+  }
+
+  function selectSourceChunks(focus){
+    if (!state.sourceChunks.length) return [];
+    const recent=state.history.slice(-5);
+    const recentPages=new Set(recent.map(h=>(h.sourceFile||"")+"||"+(h.sourcePage||"")));
+    const recentWords=new Set(recent.flatMap(h=>[
+      ...keywordSet(h.topic), ...keywordSet(h.subtopic),
+      ...keywordSet(h.sourceContent)
+    ]));
+
+    let best=null, bestScore=-Infinity;
+    const n=state.sourceChunks.length;
+
+    for(let offset=0; offset<n; offset++){
+      const idx=(state.sourceCursor+offset)%n;
+      const c=state.sourceChunks[idx];
+      const words=keywordSet(c.content);
+      let score=-offset*0.12;
+      let overlap=0;
+      recentWords.forEach(w=>{if(words.has(w)) overlap++;});
+      score -= overlap*0.35;
+      if(recentPages.has(c.file+"||"+c.page)) score-=5;
+      if(score>bestScore){bestScore=score;best={idx,c};}
+    }
+
+    const selected=[best.c];
+    state.sourceCursor=(best.idx+1)%n;
+
+    // Application questions get one adjacent section for context, but still
+    // far less material than the old "send the whole document" approach.
+    if(focus==="application" && n>1){
+      const next=state.sourceChunks[state.sourceCursor];
+      if(next && next.file===best.c.file){
+        selected.push(next);
+        state.sourceCursor=(state.sourceCursor+1)%n;
+      }
+    }
+    return selected;
+  }
+
+  function formatSelectedSource(chunks){
+    return chunks.map((c,i)=>
+      "[SOURCE SECTION "+(i+1)+"]\nFILE: "+c.file+"\nPAGE/SLIDE: "+c.page+
+      "\nCONTENT:\n"+c.content
+    ).join("\n\n");
+  }
+
+  // ---------------- question generation ----------------
+  function pickType(){
+    if (state.qType !== "mixed") return state.qType;
+    return Math.random() < 0.5 ? "mcq" : "subjective";
+  }
+  function pickFocus(){
+    if (state.focus !== "mixed") return state.focus;
+    return Math.random() < 0.5 ? "fact" : "application";
+  }
+
+  function normalizeQuestionText(s){
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length > 3)
+      .filter(w => !["what","which","when","where","why","how","following","according","material","source","question"].includes(w));
+  }
+
+  function questionSimilarity(a, b){
+    const A = new Set(normalizeQuestionText(a));
+    const B = new Set(normalizeQuestionText(b));
+    if (!A.size || !B.size) return 0;
+    let intersection = 0;
+    A.forEach(w => { if (B.has(w)) intersection++; });
+    return intersection / Math.max(1, Math.min(A.size, B.size));
+  }
+
+  function isTooSimilarToRecent(q){
+    const recent = state.history.slice(-4);
+    const recentAsked = state.askedTexts.slice(-4);
+
+    // Never ask the same specific subtopic/case consecutively.
+    const qSubtopic = String(q.subtopic || "").trim().toLowerCase();
+    const qSource = String(q.sourceContent || "").trim().toLowerCase();
+
+    for (const h of recent) {
+      const sameSubtopic =
+        qSubtopic &&
+        h.subtopic &&
+        qSubtopic === String(h.subtopic).trim().toLowerCase();
+
+      const sameSource =
+        qSource &&
+        h.sourceContent &&
+        qSource === String(h.sourceContent).trim().toLowerCase();
+
+      if (sameSubtopic || sameSource) return true;
+
+      // Catch "same concept, different wording" even when the model gives
+      // slightly different labels.
+      if (questionSimilarity(q.question, h.question) >= 0.58) return true;
+    }
+
+    for (const oldQuestion of recentAsked) {
+      if (questionSimilarity(q.question, oldQuestion) >= 0.68) return true;
+    }
+
+    return false;
+  }
+
+  async function generateQuestion(){
+    const type=pickType();
+    const focus=pickFocus();
+    const avoidList=state.askedTexts.slice(-4).map(q => String(q).slice(0, 140));
+    state.askedConcepts=Array.isArray(state.askedConcepts)?state.askedConcepts:[];
+
+    const recentConcepts=state.history.slice(-5).map(h=>
+      "- "+(h.topic||"unknown")+" | "+(h.subtopic||"unknown")+
+      " | "+(h.sourceFile||"unknown")+" — Page "+(h.sourcePage||"unknown")
+    );
+
+    const selected=selectSourceChunks(focus);
+    if(!selected.length) throw new Error("No source sections were indexed. Re-upload or paste your study material.");
+
+    const sourceForQuestion=formatSelectedSource(selected);
+
+    const system=
+      "You write one quiz question strictly from the SOURCE SECTIONS provided. "+
+      "Do not use outside knowledge. Respond with ONLY valid JSON. "+
+      "Use the exact FILE and PAGE/SLIDE metadata from the source section that supports the question. Never guess a page. "+
+      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row.";
+
+    let schema;
+    if(type==="mcq"){
+      schema='Return JSON: {"type":"mcq","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application: 2-4 sentence mini-case; otherwise empty string","question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"one short sentence"}. Exactly 4 options, one correct. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
+    }else{
+      schema='Return JSON: {"type":"subjective","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application: 2-4 sentence mini-case; otherwise empty string","question":"...","idealAnswer":"1-3 sentence model answer","explanation":"one short sentence"}. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
+    }
+
+    const focusInstruction=focus==="fact"
+      ? "FACT MODE: test recall of a specific fact, term, detail, or relationship in the source."
+      : "APPLICATION MODE: create a short 2-4 sentence caselet involving realistic entities, decisions, actions, or outcomes, then ask the student to apply the source concept. For example, if the source covers alliance governance, describe firms creating a joint steering committee and functional committees, then ask which governance mechanism is illustrated. Do not merely reword a fact from the notes.";
+
+    const diversity=
+      (avoidList.length ? "Do not repeat or closely resemble:\n- "+avoidList.join("\n- ")+"\n":"")+
+      (recentConcepts.length ? "\nRECENT CONCEPTS — avoid these:\n"+recentConcepts.join("\n")+"\n":"")+
+      "\nChoose a genuinely different subtopic and angle. For application questions also change the case setup, entities, decision and application angle.";
+
+    const prompt=
+      "SUBJECT: "+(state.subject||"not specified")+"\n"+
+      "DIFFICULTY: "+state.difficulty+"\n"+
+      focusInstruction+"\n"+diversity+
+      "\n\nSOURCE SECTIONS:\n"+sourceForQuestion+"\n\n"+schema;
+
+    let last=null;
+    for(let attempt=0;attempt<3;attempt++){
+      const retry=attempt===0 ? "" :
+        "\nThe previous candidate was too similar. Generate a COMPLETELY DIFFERENT concept/angle using only these source sections.";
+      const parsed=parseJsonLoose(await callAI(system,prompt+retry,false));
+      if(!parsed.question) throw new Error("Malformed question");
+      parsed.topic=parsed.topic||"Topic not identified";
+      parsed.subtopic=parsed.subtopic||parsed.topic||"Specific subtopic not identified";
+      parsed.sourceFile=parsed.sourceFile||selected[0].file;
+      parsed.sourcePage=parsed.sourcePage||selected[0].page;
+      parsed.sourceContent=parsed.sourceContent||parsed.subtopic||"Source content not identified";
+      parsed.scenario=parsed.scenario||"";
+      last=parsed;
+      if(!isTooSimilarToRecent(parsed)) return parsed;
+    }
+    return last;
+  }
+
+
+  async function gradeSubjective(question, idealAnswer, userAnswer){
+    const system = "You are a fair, encouraging grader for a self-study quiz app. Respond with ONLY raw JSON: " +
+      '{"verdict":"correct"|"partial"|"incorrect","feedback":"one short, specific sentence of feedback"}. ' +
+      'Use "correct" when the answer captures the key idea even if worded differently, "partial" when it is on the right track but missing something important, "incorrect" when it misses the point.';
+    const userPrompt =
+      "Question: " + question + "\n" +
+      "Model answer: " + idealAnswer + "\n" +
+      "Student's answer: " + (userAnswer || "(left blank)");
+    const raw = await callAI(system, userPrompt, false);
+    return parseJsonLoose(raw);
+  }
+
+  // ---------------- screen switching ----------------
+  function showScreen(name){
+    screenSetup.classList.toggle("hidden", name !== "setup");
+    screenQuiz.classList.toggle("hidden", name !== "quiz");
+    screenResults.classList.toggle("hidden", name !== "results");
+  }
+
+  // ---------------- setup -> start ----------------
+  startBtn.addEventListener("click", async () => {
+    const text = sourceText.value.trim();
+    setupError.classList.add("hidden");
+    if (!text && state.images.length === 0) {
+      setupError.textContent = "Add some source material first — paste text, or upload a file or screenshot.";
+      setupError.classList.remove("hidden");
+      return;
+    }
+    state.sourceText = text;
+    state.subject = subjectInput.value.trim();
+    state.difficulty = difficultySelect.value;
+    state.history = [];
+    state.askedTexts = [];
+    state.askedConcepts = [];
+    state.score = { correct: 0, total: 0 };
+    buildSourceIndex();
+
+    quizSubjectLabel.textContent = state.subject || "your material";
+    updateScoreUI();
+    scantron.innerHTML = "";
+    showScreen("quiz");
+    await loadNextQuestion();
+  });
+
+  // ---------------- rendering the question ----------------
+  function renderLoading(){
+    questionCard.innerHTML = '<div class="loading-line"><span class="pencil-spin"></span><span>Writing the next question...</span></div>';
+    nextBtn.classList.add("hidden");
+  }
+
+  function renderError(msg, retryFn){
+    questionCard.innerHTML =
+      '<div class="feedback incorrect"><span class="verdict">Couldn\'t generate a question</span>' + escapeHtml(msg) + '</div>';
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "btn secondary";
+    retryBtn.style.marginTop = "14px";
+    retryBtn.textContent = "Try again";
+    retryBtn.addEventListener("click", retryFn);
+    questionCard.appendChild(retryBtn);
+  }
+
+  async function loadNextQuestion(){
+    state.answered = false;
+    nextBtn.classList.add("hidden");
+    renderLoading();
+    try {
+      const q = await generateQuestion();
+      state.currentQuestion = q;
+      state.askedTexts.push(q.question);
+      if (!Array.isArray(state.askedConcepts)) state.askedConcepts = [];
+      state.askedConcepts.push({
+        topic: q.topic,
+        subtopic: q.subtopic,
+        sourceFile: q.sourceFile,
+        sourcePage: q.sourcePage
+      });
+      renderQuestion(q);
+    } catch (err) {
+      // Never hide the provider's real error. This makes auth, CORS, model,
+      // quota and request-format problems diagnosable.
+      const message = err && err.message
+        ? err.message
+        : "Unknown Cerebras error. Check your key, model, quota, and connection.";
+      renderError(message, loadNextQuestion);
+    }
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement("div");
+    d.textContent = s == null ? "" : String(s);
+    return d.innerHTML;
+  }
+
+  function renderQuestion(q){
+    const badgeType = q.type === "mcq" ? "Multiple choice" : "Written answer";
+    const badgeCat = q.category === "application" ? "Application" : "Fact-based";
+
+    let html = '<div class="q-meta">' +
+      '<span class="q-badge">' + badgeType + '</span>' +
+      '<span class="q-badge">' + badgeCat + '</span>' +
+      '</div>';
+
+    // Application questions get a short caselet before the actual question.
+    if (q.category === "application" && q.scenario) {
+      html += '<div class="caselet">' +
+        '<span class="caselet-label">Case</span>' +
+        '<p class="caselet-text">' + escapeHtml(q.scenario) + '</p>' +
+        '</div>';
+    }
+
+    html += '<p class="q-text ' + (q.category === "application" ? "application-question" : "") + '">' +
+      escapeHtml(q.question) + '</p>';
+
+    if (q.type === "mcq") {
+      html += '<div class="options" id="optionsList">';
+      q.options.forEach((opt, i) => {
+        html += '<button type="button" class="option" data-index="' + i + '">' +
+          '<span class="letter">' + String.fromCharCode(65 + i) + '.</span>' +
+          '<span class="option-text">' + escapeHtml(opt) + '</span>' +
+          '<span class="answer-state"></span>' +
+          '</button>';
+      });
+      html += '</div>';
+    } else {
+      html += '<textarea class="subjective-answer" id="subjectiveInput" placeholder="Write your answer here..."></textarea>' +
+        '<button class="btn" id="submitSubjectiveBtn">Submit answer</button>';
+    }
+
+    html += '<div id="feedbackSlot"></div>';
+    questionCard.innerHTML = html;
+
+    if (q.type === "mcq") {
+      questionCard.querySelectorAll(".option").forEach(btn => {
+        btn.addEventListener("click", () => handleMcqAnswer(parseInt(btn.dataset.index, 10)));
+      });
+    } else {
+      document.getElementById("submitSubjectiveBtn").addEventListener("click", handleSubjectiveSubmit);
+    }
+  }
+
+  function handleMcqAnswer(chosenIndex){
+    if (state.answered) return;
+    state.answered = true;
+    const q = state.currentQuestion;
+    const correct = chosenIndex === q.correctIndex;
+
+    questionCard.querySelectorAll(".option").forEach((btn, i) => {
+      btn.disabled = true;
+      const stateLabel = btn.querySelector(".answer-state");
+
+      if (i === q.correctIndex) {
+        btn.classList.add("reveal-correct");
+        if (stateLabel) stateLabel.textContent = "✓ Correct";
+      }
+
+      if (i === chosenIndex && correct) {
+        btn.classList.add("chosen-correct");
+      }
+
+      if (i === chosenIndex && !correct) {
+        btn.classList.add("chosen-wrong");
+        if (stateLabel) stateLabel.textContent = "Your answer";
+      }
+    });
+
+    showStamp(correct);
+    showFeedback(correct ? "correct" : "incorrect", q.explanation || "");
+    recordAnswer(
+      q,
+      correct ? "correct" : "incorrect",
+      q.explanation || "",
+      q.options ? q.options[chosenIndex] : "",
+      q.options ? q.options[q.correctIndex] : ""
+    );
+    nextBtn.classList.remove("hidden");
+  }
+
+  async function handleSubjectiveSubmit(){
+    if (state.answered) return;
+    const input = document.getElementById("subjectiveInput");
+    const answer = input.value.trim();
+    const submitBtn = document.getElementById("submitSubjectiveBtn");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Grading...";
+    const q = state.currentQuestion;
+    try {
+      const result = await gradeSubjective(q.question, q.idealAnswer, answer);
+      state.answered = true;
+      input.disabled = true;
+      submitBtn.remove();
+      const isCorrect = result.verdict === "correct";
+      showStamp(isCorrect);
+      const feedbackText = (result.feedback || "") + " Model answer: " + q.idealAnswer;
+      showFeedback(result.verdict === "incorrect" ? "incorrect" : "correct", feedbackText, result.verdict);
+      recordAnswer(q, result.verdict, result.feedback || "", answer, q.idealAnswer);
+      nextBtn.classList.remove("hidden");
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit answer";
+      const slot = document.getElementById("feedbackSlot");
+      slot.innerHTML = '<div class="feedback incorrect"><span class="verdict">Grading failed</span>Couldn\'t reach the grader — check your Cerebras key, quota, and connection.</div>';
+    }
+  }
+
+  function showStamp(correct){
+    const stamp = document.createElement("div");
+    stamp.className = "stamp " + (correct ? "correct" : "incorrect");
+    stamp.textContent = correct ? "Correct" : "Revise";
+    questionCard.appendChild(stamp);
+  }
+
+  function showFeedback(kind, text, verdict){
+    const slot = document.getElementById("feedbackSlot");
+    const label = verdict === "partial" ? "Partially right" : (kind === "correct" ? "Correct" : "Not quite");
+    slot.innerHTML = '<div class="feedback ' + (kind === "correct" ? "correct" : "incorrect") + '">' +
+      '<span class="verdict">' + label + '</span>' + escapeHtml(text) + '</div>';
+  }
+
+  function recordAnswer(q, verdict, explanation, userAnswer, correctAnswer){
+    const isCorrect = verdict === "correct";
+    state.score.total += 1;
+    if (isCorrect) state.score.correct += 1;
+    state.history.push({
+      question: q.question,
+      type: q.type,
+      category: q.category || "",
+      topic: q.topic || "Topic not identified",
+      subtopic: q.subtopic || q.topic || "Specific subtopic not identified",
+      sourceFile: q.sourceFile || "File not identified",
+      sourcePage: q.sourcePage || "Not identified",
+      sourceContent: q.sourceContent || q.subtopic || "Source content not identified",
+      scenario: q.scenario || "",
+      verdict: verdict,
+      explanation: explanation,
+      userAnswer: userAnswer || "",
+      correctAnswer: correctAnswer || q.idealAnswer || ""
+    });
+    updateScoreUI();
+    addScantronBubble(isCorrect);
+  }
+
+  function updateScoreUI(){
+    scoreCorrect.textContent = state.score.correct;
+    scoreTotal.textContent = state.score.total;
+  }
+
+  function addScantronBubble(correct){
+    const b = document.createElement("div");
+    b.className = "bubble " + (correct ? "correct" : "incorrect");
+    scantron.appendChild(b);
+  }
+
+  nextBtn.addEventListener("click", loadNextQuestion);
+
+  // ---------------- end quiz / results ----------------
+  endQuizBtn.addEventListener("click", showResults);
+
+  function escapeReportText(value){
+    return escapeHtml(value == null ? "" : String(value));
+  }
+
+  function buildReportData(){
+    const wrong = state.history.filter(h => h.verdict !== "correct");
+    const topicMap = {};
+
+    wrong.forEach(h => {
+      const topic = h.topic || "Topic not identified";
+      const subtopic = h.subtopic || h.topic || "Specific subtopic not identified";
+      const sourceFile = h.sourceFile || "File not identified";
+      const page = h.sourcePage || "Not identified";
+      const sourceContent = h.sourceContent || "Source content not identified";
+
+      if (!topicMap[topic]) {
+        topicMap[topic] = { topic, count: 0, subtopics: {} };
+      }
+
+      topicMap[topic].count += 1;
+
+      if (!topicMap[topic].subtopics[subtopic]) {
+        topicMap[topic].subtopics[subtopic] = {
+          name: subtopic,
+          count: 0,
+          sources: [],
+          sourceContents: []
+        };
+      }
+
+      const s = topicMap[topic].subtopics[subtopic];
+      s.count += 1;
+
+      const sourceLabel = sourceFile + " — Page " + page;
+      if (!s.sources.includes(sourceLabel)) s.sources.push(sourceLabel);
+      if (!s.sourceContents.includes(sourceContent)) s.sourceContents.push(sourceContent);
+    });
+
+    const topics = Object.values(topicMap)
+      .map(t => {
+        t.subtopics = Object.values(t.subtopics).sort((a,b) => b.count - a.count);
+        return t;
+      })
+      .sort((a,b) => b.count - a.count);
+
+    return { wrong, topics };
+  }
+
+  function renderReportCard(){
+    const total = state.score.total;
+    const correct = state.score.correct;
+    const pct = total ? Math.round((correct / total) * 100) : 0;
+    const grade = total
+      ? (pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : "D")
+      : "—";
+
+    const report = buildReportData();
+    state.reportTopics = report.topics;
+    state.reportGenerated = true;
+
+    reportSubject.textContent = state.subject || "Study material";
+    reportGrade.textContent = grade;
+    reportScore.textContent = pct + "%";
+    reportCorrect.textContent = correct + " / " + total;
+    reportWrong.textContent = report.wrong.length;
+
+    if (!report.topics.length) {
+      reportTopics.innerHTML = '<div class="feedback correct"><span class="verdict">Excellent</span>No incorrect answers — no topics require review.</div>';
+    } else {
+      reportTopics.innerHTML = report.topics.map(t =>
+        '<div class="topic-row">' +
+          '<div class="topic-name">' + escapeReportText(t.topic) + ' <span class="topic-page">(' + t.count + ' wrong)</span></div>' +
+          '<div class="topic-advice">' +
+            t.subtopics.map(s =>
+              '<div style="margin:9px 0 0 12px;padding-left:12px;border-left:2px solid var(--rule-blue);">' +
+                '<strong>' + escapeReportText(s.name) + '</strong><br>' +
+                '<span class="topic-page">Source: ' + escapeReportText(s.sources.join("; ") || "File/page not identified") +
+                ' — ' + escapeReportText(s.sourceContents.join("; ") || "Source content not identified") + '</span>' +
+              '</div>'
+            ).join("") +
+          '</div>' +
+        '</div>'
+      ).join("");
+    }
+
+    if (!report.wrong.length) {
+      reportWrongQuestions.innerHTML = '<div class="feedback correct"><span class="verdict">Perfect round</span>You did not get any questions wrong.</div>';
+    } else {
+      reportWrongQuestions.innerHTML = report.wrong.map((h, i) =>
+        '<div class="wrong-item">' +
+          '<div class="wrong-q">Q' + (i + 1) + '. ' + escapeReportText(h.question) + '</div>' +
+          (h.scenario ? '<div class="wrong-answer"><span class="wrong-label">Case</span><br>' + escapeReportText(h.scenario) + '</div>' : '') +
+          '<div class="wrong-answer"><span class="wrong-label">Your answer</span><br>' +
+            escapeReportText(h.userAnswer || "No answer") + '</div>' +
+          '<div class="correct-answer"><span class="wrong-label">Correct / model answer</span><br>' +
+            escapeReportText(h.correctAnswer || "Not available") + '</div>' +
+          '<div class="correct-answer"><span class="wrong-label">What you got wrong</span><br>' +
+            escapeReportText(h.subtopic || h.topic || "Not identified") + '</div>' +
+          '<div class="correct-answer"><span class="wrong-label">Source</span><br>' +
+            escapeReportText(h.sourceFile || "File not identified") + ' — Page ' +
+            escapeReportText(h.sourcePage || "Not identified") + ' — ' +
+            escapeReportText(h.sourceContent || "Source content not identified") + '</div>' +
+          '<div class="correct-answer"><span class="wrong-label">Broad topic</span><br>' +
+            escapeReportText(h.topic || "Not identified") + '</div>' +
+          (h.explanation ? '<div class="correct-answer"><span class="wrong-label">Explanation</span><br>' + escapeReportText(h.explanation) + '</div>' : '') +
+        '</div>'
+      ).join("");
+    }
+  }
+
+  async function downloadReport(){
+    if (!state.reportGenerated) renderReportCard();
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert("PDF generator is still loading. Please try again in a moment.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 42;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - margin * 2;
+    let y = 48;
+
+    const total = state.score.total;
+    const correct = state.score.correct;
+    const pct = total ? Math.round((correct / total) * 100) : 0;
+    const grade = total ? (pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : "D") : "—";
+    const report = buildReportData();
+
+    function ensureSpace(h){
+      if (y + h > pageHeight - 45) {
+        doc.addPage();
+        y = 48;
+      }
+    }
+
+    function addText(txt, x, width, size=10, leading=14, bold=false){
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      const lines = doc.splitTextToSize(String(txt || ""), width);
+      ensureSpace(lines.length * leading + 5);
+      doc.text(lines, x, y);
+      y += lines.length * leading;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.text("Study Hall — Report Card", margin, y);
+    y += 20;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(state.subject || "Study material", margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Grade: " + grade, pageWidth - margin - 78, y);
+    y += 18;
+
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 22;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text("Score: " + pct + "%", margin, y);
+    doc.text("Correct: " + correct + " / " + total, margin + 150, y);
+    doc.text("Needs review: " + report.wrong.length, margin + 300, y);
+    y += 28;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("TOPICS TO STUDY", margin, y);
+    y += 18;
+
+    if (!report.topics.length) {
+      addText("No topics require review.", margin, contentWidth);
+    } else {
+      report.topics.forEach(t => {
+        addText(t.topic + " (" + t.count + " wrong)", margin, contentWidth, 11, 15, true);
+
+        t.subtopics.forEach(s => {
+          addText("Specific subtopic: " + s.name, margin + 12, contentWidth - 12, 10, 14, true);
+          addText(
+            "Source: " + (s.sources.join("; ") || "File/page not identified") +
+            " — " + (s.sourceContents.join("; ") || "Source content not identified"),
+            margin + 12, contentWidth - 12, 9.5, 13
+          );
+          y += 4;
+        });
+        y += 6;
+      });
+    }
+
+    ensureSpace(30);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("QUESTIONS YOU GOT WRONG", margin, y);
+    y += 20;
+
+    if (!report.wrong.length) {
+      addText("Perfect round — no incorrect answers.", margin, contentWidth);
+    } else {
+      report.wrong.forEach((h, i) => {
+        addText("Q" + (i + 1) + ". " + h.question, margin, contentWidth, 10.5, 14, true);
+        if (h.scenario) addText("Case: " + h.scenario, margin + 10, contentWidth - 10);
+        addText("Your answer: " + (h.userAnswer || "No answer"), margin + 10, contentWidth - 10);
+        addText("Correct / model answer: " + (h.correctAnswer || "Not available"), margin + 10, contentWidth - 10);
+        addText("What you got wrong: " + (h.subtopic || h.topic || "Not identified"), margin + 10, contentWidth - 10);
+        addText(
+          "Source: " + (h.sourceFile || "File not identified") + " — Page " + (h.sourcePage || "Not identified") +
+          " — " + (h.sourceContent || "Source content not identified"),
+          margin + 10, contentWidth - 10
+        );
+        addText("Broad topic: " + (h.topic || "Not identified"), margin + 10, contentWidth - 10);
+        if (h.explanation) addText("Explanation: " + h.explanation, margin + 10, contentWidth - 10);
+        y += 10;
+      });
+    }
+
+    const safeSubject = (state.subject || "study-report")
+      .replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+
+    doc.save((safeSubject || "study-report") + "-report-card.pdf");
+  }
+
+  function showResults(){
+    renderReportCard();
+    showScreen("results");
+  }
+
+  retakeBtn.addEventListener("click", async () => {
+    state.history = [];
+    state.askedTexts = [];
+    state.askedConcepts = [];
+    state.sourceFiles = [];
+    state.sourceChunks = [];
+    state.sourceCursor = 0;
+    state.reportTopics = [];
+    state.reportGenerated = false;
+    state.score = { correct: 0, total: 0 };
+    updateScoreUI();
+    scantron.innerHTML = "";
+    showScreen("quiz");
+    await loadNextQuestion();
+  });
+
+  downloadReportBtn.addEventListener("click", downloadReport);
+
+  newMaterialBtn.addEventListener("click", () => {
+    sourceText.value = "";
+    subjectInput.value = "";
+    fileStatus.textContent = "";
+    state.images = [];
+    renderFileChips();
+    showScreen("setup");
+  });
+
+})();
+</script>
+</body>
+</html>

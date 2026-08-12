@@ -1,0 +1,9 @@
+{
+  "name": "study-hall-ai-pool",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Study Hall quiz app with server-side AI provider rotation.",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
