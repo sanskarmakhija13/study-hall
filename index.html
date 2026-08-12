@@ -1078,57 +1078,88 @@
   function chooseQuestionTarget(focus){
     ensureConceptRegistry();
 
-    const undiscovered=state.sourceChunks.filter(c=>c && !c.conceptsKnown);
+    const undiscovered = state.sourceChunks.filter(function(c){
+      return c && !c.conceptsKnown;
+    });
 
-    // Phase 1: discover each source section once, then build its compact
-    // concept inventory as part of the same question call. No extra API call.
-    if(undiscovered.length){
-      const idx=undiscovered.reduce((bestId,c)=>{
-        if(bestId===null) return c.id;
-        const d1=Math.abs(c.id-state.sourceCursor);
-        const d2=Math.abs(bestId-state.sourceCursor);
-        return d1<d2 ? c.id : bestId;
-      },null);
-      const primary=state.sourceChunks.find(c=>c.id===idx) || undiscovered[0];
+    // Phase 1: discover each source section once. Avoid Array.reduce here:
+    // an explicit mutable index is clearer and avoids accidental constant
+    // reassignment edge cases in older browser/runtime versions.
+    if (undiscovered.length) {
+      let idx = undiscovered[0].id;
+      let bestDistance = Math.abs(idx - state.sourceCursor);
+
+      for (let i = 1; i < undiscovered.length; i++) {
+        const candidateId = undiscovered[i].id;
+        const distance = Math.abs(candidateId - state.sourceCursor);
+        if (distance < bestDistance) {
+          idx = candidateId;
+          bestDistance = distance;
+        }
+      }
+
+      const primary = state.sourceChunks.find(function(c){
+        return c && c.id === idx;
+      }) || undiscovered[0];
+
+      if (!primary) {
+        throw new Error("Unable to locate the next source section.");
+      }
+
       return {
-        primary,
-        selected:[primary],
-        target:null,
-        phase:"DISCOVERY"
+        primary: primary,
+        selected: [primary],
+        target: null,
+        phase: "DISCOVERY"
       };
     }
 
-    // Phase 2/3: all source sections have compact concept inventories.
-    // Cover each important concept exactly once before reinforcement.
-    const uncovered=state.conceptOrder
-      .map(id=>state.concepts[id])
-      .filter(c=>c && c.attempts===0);
+    // Phase 2: cover every tracked important concept once.
+    const uncovered = state.conceptOrder
+      .map(function(id){ return state.concepts[id]; })
+      .filter(function(c){ return c && c.attempts === 0; });
 
-    if(uncovered.length){
-      const target=chooseBestConcept(uncovered,state.lastConceptId) || uncovered[0];
-      const primary=state.sourceChunks.find(c=>c && c.id===target.chunkId) || state.sourceChunks[0];
-      if(!primary) throw new Error("Unable to locate the source section for the next concept.");
+    if (uncovered.length) {
+      const target = chooseBestConcept(uncovered, state.lastConceptId) || uncovered[0];
+      const primary = state.sourceChunks.find(function(c){
+        return c && c.id === target.chunkId;
+      }) || state.sourceChunks[0];
+
+      if (!primary) {
+        throw new Error("Unable to locate the source section for the next concept.");
+      }
+
       return {
-        primary,
-        selected:focus==="application" ? selectAdjacent(primary) : [primary],
-        target,
-        phase:"CONCEPT_COVERAGE"
+        primary: primary,
+        selected: focus === "application" ? selectAdjacent(primary) : [primary],
+        target: target,
+        phase: "CONCEPT_COVERAGE"
       };
     }
 
-    // Phase 3: reinforcement. Weak concepts get much higher priority than
-    // concepts already answered correctly.
-    const all=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
-    const target=chooseBestConcept(all,state.lastConceptId) || chooseBestConcept(all,null);
-    const primary=target
-      ? (state.sourceChunks.find(c=>c && c.id===target.chunkId) || state.sourceChunks[0])
+    // Phase 3: adaptive reinforcement.
+    const all = state.conceptOrder
+      .map(function(id){ return state.concepts[id]; })
+      .filter(Boolean);
+
+    const target = chooseBestConcept(all, state.lastConceptId) ||
+                   chooseBestConcept(all, null);
+
+    const primary = target
+      ? (state.sourceChunks.find(function(c){
+          return c && c.id === target.chunkId;
+        }) || state.sourceChunks[0])
       : state.sourceChunks[0];
-    if(!primary) throw new Error("Unable to locate a source section for reinforcement.");
+
+    if (!primary) {
+      throw new Error("Unable to locate a source section for reinforcement.");
+    }
+
     return {
-      primary,
-      selected:focus==="application" ? selectAdjacent(primary) : [primary],
-      target,
-      phase:"REINFORCEMENT"
+      primary: primary,
+      selected: focus === "application" ? selectAdjacent(primary) : [primary],
+      target: target,
+      phase: "REINFORCEMENT"
     };
   }
 
@@ -1500,6 +1531,7 @@ function formatSelectedSource(chunks){
     const message = lastError && lastError.message
       ? lastError.message
       : "Unknown AI engine error. The app will automatically rotate through the configured providers.";
+    console.error("Study Hall question generation failed:", lastError);
     renderError(message, loadNextQuestion);
   }
 
