@@ -1221,6 +1221,149 @@
     }
   }
 
+
+  /* =========================================================
+     FINAL DARK UI POLISH — QUESTION BADGES + REPORT
+     ========================================================= */
+
+  /* Make the question type/category badges readable without bright white boxes. */
+  html[data-theme="dark"] .q-badge{
+    background:#161B22 !important;
+    color:#58A6FF !important;
+    border-color:#30363D !important;
+  }
+  html[data-theme="dark"] .q-badge:first-child{
+    background:#0D1D30 !important;
+    color:#79C0FF !important;
+    border-color:#1F6FEB !important;
+  }
+
+  @media (prefers-color-scheme:dark){
+    html[data-theme="auto"] .q-badge{
+      background:#161B22 !important;
+      color:#58A6FF !important;
+      border-color:#30363D !important;
+    }
+    html[data-theme="auto"] .q-badge:first-child{
+      background:#0D1D30 !important;
+      color:#79C0FF !important;
+      border-color:#1F6FEB !important;
+    }
+  }
+
+  /* Application caselet label */
+  html[data-theme="dark"] .caselet{
+    background:#0D1D30 !important;
+    border-color:#1F6FEB !important;
+    color:#F0F6FC !important;
+  }
+  html[data-theme="dark"] .caselet-label{
+    color:#58A6FF !important;
+  }
+  @media (prefers-color-scheme:dark){
+    html[data-theme="auto"] .caselet{
+      background:#0D1D30 !important;
+      border-color:#1F6FEB !important;
+      color:#F0F6FC !important;
+    }
+    html[data-theme="auto"] .caselet-label{color:#58A6FF !important;}
+  }
+
+  /* A single report palette for both explicit Dark and Auto-dark.
+     No white paper/header islands. */
+  html[data-theme="dark"] .report-card,
+  html[data-theme="dark"] .report-head,
+  html[data-theme="dark"] .report-stat,
+  html[data-theme="dark"] .report-section,
+  html[data-theme="dark"] .topic-row,
+  html[data-theme="dark"] .wrong-item{
+    background:#161B22 !important;
+    color:#F0F6FC !important;
+    border-color:#30363D !important;
+  }
+
+  html[data-theme="dark"] .report-head{
+    border-bottom:1px solid #30363D !important;
+    padding:4px 0 18px !important;
+  }
+
+  html[data-theme="dark"] .report-card h2,
+  html[data-theme="dark"] .report-card h3,
+  html[data-theme="dark"] .report-card .topic-name,
+  html[data-theme="dark"] .report-card .wrong-q{
+    color:#F0F6FC !important;
+  }
+
+  html[data-theme="dark"] .report-section h3{
+    background:#0D1D30 !important;
+    color:#58A6FF !important;
+    border:1px solid #1F6FEB !important;
+    border-radius:6px !important;
+    padding:10px 12px !important;
+  }
+
+  html[data-theme="dark"] .report-stat .value{
+    color:#F0F6FC !important;
+  }
+
+  html[data-theme="dark"] .report-grade{
+    background:#17341F !important;
+    color:#3FB950 !important;
+    border-color:#3FB950 !important;
+  }
+
+  @media (prefers-color-scheme:dark){
+    html[data-theme="auto"] .report-card,
+    html[data-theme="auto"] .report-head,
+    html[data-theme="auto"] .report-stat,
+    html[data-theme="auto"] .report-section,
+    html[data-theme="auto"] .topic-row,
+    html[data-theme="auto"] .wrong-item{
+      background:#161B22 !important;
+      color:#F0F6FC !important;
+      border-color:#30363D !important;
+    }
+
+    html[data-theme="auto"] .report-head{
+      border-bottom:1px solid #30363D !important;
+      padding:4px 0 18px !important;
+    }
+
+    html[data-theme="auto"] .report-card h2,
+    html[data-theme="auto"] .report-card h3,
+    html[data-theme="auto"] .report-card .topic-name,
+    html[data-theme="auto"] .report-card .wrong-q{
+      color:#F0F6FC !important;
+    }
+
+    html[data-theme="auto"] .report-section h3{
+      background:#0D1D30 !important;
+      color:#58A6FF !important;
+      border:1px solid #1F6FEB !important;
+      border-radius:6px !important;
+      padding:10px 12px !important;
+    }
+
+    html[data-theme="auto"] .report-stat .value{color:#F0F6FC !important;}
+    html[data-theme="auto"] .report-grade{
+      background:#17341F !important;
+      color:#3FB950 !important;
+      border-color:#3FB950 !important;
+    }
+  }
+
+  /* Give the report a deliberate, compact header instead of a large empty band. */
+  .report-head{
+    min-height:0 !important;
+  }
+  .report-head h2{
+    line-height:1.15 !important;
+  }
+
+  @media(max-width:560px){
+    .report-head{gap:12px !important;}
+  }
+
 </style>
 </head>
 <body>
@@ -1725,7 +1868,7 @@
       for (let i=0; i<markers.length; i++) {
         let content = raw.slice(markers[i].end, i+1<markers.length ? markers[i+1].start : raw.length).trim();
         if (!content) continue;
-        let maxChars=6500;
+        let maxChars=5500;
         for (let pos=0; pos<content.length; pos+=maxChars) {
           state.sourceChunks.push({
             id:state.sourceChunks.length,
@@ -1738,7 +1881,7 @@
         }
       }
     } else {
-      let maxChars=6500;
+      let maxChars=5500;
       for (let pos=0; pos<raw.length; pos+=maxChars) {
         state.sourceChunks.push({
           id:state.sourceChunks.length,
@@ -1975,7 +2118,7 @@ function formatSelectedSource(chunks){
 
   function isTooSimilarToRecent(q){
     let recent = state.history.slice(-4);
-    let recentAsked = state.askedTexts.slice(-4);
+    let recentAsked = state.askedTexts.slice(-3);
 
     // Never ask the same specific subtopic/case consecutively.
     let qSubtopic = String(q.subtopic || "").trim().toLowerCase();
@@ -2089,7 +2232,7 @@ function formatSelectedSource(chunks){
     let avoidList=state.askedTexts.slice(-4).map(q=>String(q).slice(0,140));
     state.askedConcepts=Array.isArray(state.askedConcepts)?state.askedConcepts:[];
 
-    let recentConcepts=state.history.slice(-5).map(h=>
+    let recentConcepts=state.history.slice(-3).map(h=>
       "- "+(h.topic||"unknown")+" | "+(h.subtopic||"unknown")+
       " | "+(h.sourceFile||"unknown")+" — Page "+(h.sourcePage||"unknown")+
       " | outcome="+(h.verdict||"unknown")
@@ -2124,7 +2267,7 @@ function formatSelectedSource(chunks){
       "Prefer questions that test whether the learner understands WHY, HOW, WHEN, WHICH consequence, trade-off, mechanism, or distinction—not questions that merely repeat a sentence from the source.";
 
     if(plan.phase==="DISCOVERY"){
-      system+=" This is a DISCOVERY call for a new source section. Identify the 3-6 most important/exam-worthy concepts from this section and test the single most important concept first. Do not list trivial details. The question must still require the learner to think; do not copy a source sentence into the question.";
+      system+=" This is a DISCOVERY call for a new source section. Identify the 3-4 most important/exam-worthy concepts from this section and test the single most important concept first. Do not list trivial details. The question must still require the learner to think; do not copy a source sentence into the question.";
     }else if(plan.phase==="CONCEPT_COVERAGE"){
       system+=" This is the CONCEPT COVERAGE phase. The target concept below has not yet been tested; test that concept specifically. Prioritize conceptual clarity over trivia and do not reveal the answer in the stem.";
     }else{
@@ -2736,7 +2879,7 @@ function formatSelectedSource(chunks){
     let { jsPDF } = window.jspdf;
     let doc = new jsPDF({unit:"pt",format:"a4"});
     let margin=40, pageWidth=doc.internal.pageSize.getWidth(), pageHeight=doc.internal.pageSize.getHeight();
-    let contentWidth=pageWidth-margin*2, y=40;
+    let contentWidth=pageWidth-margin*2, y=40, bottom=pageHeight-48;
 
     let BLUE=[21,91,138], BLUE_DARK=[18,59,93], BLUE_LIGHT=[237,246,251],
         BLUE_BORDER=[201,220,236], TEXT=[18,59,93], MUTED=[94,120,144],
@@ -2760,199 +2903,259 @@ function formatSelectedSource(chunks){
       doc.text("Study Hall • "+(state.subject||"Study Report"),margin,pageHeight-17);
       doc.text("Page "+page,pageWidth-margin,pageHeight-17,{align:"right"});
     }
-    function nextPage(){
-      footer(); doc.addPage(); y=38;
+
+    function newPage(){
+      footer();
+      doc.addPage();
+      y=40;
     }
+
     function ensure(h){
-      if(y+h>pageHeight-46) nextPage();
+      if(y+h>bottom) newPage();
     }
+
     function box(x,y0,w,h,fill,stroke,r=6){
-      doc.setFillColor(...fill); doc.setDrawColor(...stroke);
+      doc.setFillColor(...fill);
+      doc.setDrawColor(...stroke);
       doc.roundedRect(x,y0,w,h,r,r,"FD");
     }
-    function lines(txt,width,size=9,bold=false){
-      doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(size);
-      return doc.splitTextToSize(String(txt||""),width);
-    }
-    function textBlock(txt,x,width,size=9,lead=12,bold=false,color=TEXT){
-      doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(size); doc.setTextColor(...color);
-      let ls=doc.splitTextToSize(String(txt||""),width);
-      ensure(ls.length*lead+4); doc.text(ls,x,y); y+=ls.length*lead; return ls.length;
-    }
-    function section(label){
-      ensure(34); doc.setFillColor(...BLUE); doc.roundedRect(margin,y,contentWidth,23,5,5,"F");
-      doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...WHITE);
-      doc.text(label,margin+11,y+15); y+=32;
-    }
-    function safeBoxText(txt,x,width,size=8.5,lead=11,maxLines=8){
-      doc.setFont("helvetica","normal"); doc.setFontSize(size); doc.setTextColor(...TEXT);
-      let ls=doc.splitTextToSize(String(txt||"Not available"),width).slice(0,maxLines);
-      doc.text(ls,x,y); return ls.length*lead;
+
+    function wrapped(txt,width,size=9,bold=false){
+      doc.setFont("helvetica",bold?"bold":"normal");
+      doc.setFontSize(size);
+      return doc.splitTextToSize(String(txt||""),Math.max(20,width));
     }
 
-    // Header
-    doc.setFillColor(...BLUE); doc.rect(0,0,pageWidth,7,"F");
+    function drawWrapped(txt,x,width,size=9,lead=12,bold=false,color=TEXT){
+      doc.setFont("helvetica",bold?"bold":"normal");
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      let ls=wrapped(txt,width,size,bold);
+      // Render a line at a time so long blocks can safely cross pages.
+      for(let line of ls){
+        if(y+lead>bottom) newPage();
+        doc.text(line,x,y);
+        y+=lead;
+      }
+      return ls.length;
+    }
+
+    function section(label){
+      ensure(31);
+      doc.setFillColor(...BLUE);
+      doc.roundedRect(margin,y,contentWidth,23,5,5,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...WHITE);
+      doc.text(label,margin+11,y+15);
+      y+=32;
+    }
+
+    function drawField(label,value,fill,stroke,labelColor){
+      let lines=wrapped(value || "Not available",contentWidth-40,8.2,false);
+      let max=5;
+      let shown=lines.slice(0,max);
+      let h=25+shown.length*10;
+      if(y+h>bottom) newPage();
+      box(margin,y,contentWidth,h,fill,stroke,5);
+      doc.setFont("helvetica","bold"); doc.setFontSize(7.2); doc.setTextColor(...labelColor);
+      doc.text(label,margin+10,y+11);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.2); doc.setTextColor(...TEXT);
+      doc.text(shown,margin+10,y+24);
+      y+=h+7;
+    }
+
+    // ---------------- HEADER ----------------
+    doc.setFillColor(...BLUE);
+    doc.rect(0,0,pageWidth,7,"F");
+
     doc.setFont("helvetica","bold"); doc.setFontSize(24); doc.setTextColor(...BLUE_DARK);
     doc.text("Study Hall",margin,42);
+
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
     doc.text("QUIZ REPORT",pageWidth-margin,41,{align:"right"});
-    y=62; doc.setDrawColor(...BLUE_BORDER); doc.line(margin,y,pageWidth-margin,y); y+=22;
 
-    // Specific study name + timestamp
+    y=62;
+    doc.setDrawColor(...BLUE_BORDER);
+    doc.line(margin,y,pageWidth-margin,y);
+    y+=22;
+
+    // Study name and timestamp occupy their own row.
     let subject=state.subject||"Study material";
     doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.setTextColor(...TEXT);
-    let titleLines=doc.splitTextToSize(subject,contentWidth-150);
-    doc.text(titleLines.slice(0,2),margin,y);
+    let titleLines=wrapped(subject,contentWidth-120,16,true).slice(0,3);
+    doc.text(titleLines,margin,y);
+
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
     doc.text(dateText+" • "+timeText,pageWidth-margin,y,{align:"right"});
-    y+=Math.max(26,titleLines.slice(0,2).length*16)+10;
 
-    // Grade badge
+    y+=Math.max(26,titleLines.length*17)+14;
+
+    // Grade gets its OWN row. It is never allowed to overlap the statistics.
     let gf=pct>=70?GREEN_LIGHT:RED_LIGHT, gs=pct>=70?GREEN:RED;
-    box(pageWidth-margin-72,y-30,72,42,gf,gs,8);
-    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...gs);
-    doc.text("GRADE",pageWidth-margin-36,y-14,{align:"center"});
-    doc.setFontSize(19); doc.text(grade,pageWidth-margin-36,y+3,{align:"center"});
+    let gradeW=78, gradeH=46, gradeX=pageWidth-margin-gradeW;
+    box(gradeX,y,gradeW,gradeH,gf,gs,8);
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...gs);
+    doc.text("GRADE",gradeX+gradeW/2,y+13,{align:"center"});
+    doc.setFontSize(19);
+    doc.text(grade,gradeX+gradeW/2,y+34,{align:"center"});
+    y+=gradeH+14;
 
-    // Stats
-    let gap=9, cardW=(contentWidth-gap*2)/3, cards=[
-      ["SCORE",pct+"%",BLUE],["CORRECT",correct+" / "+total,GREEN],["NEEDS REVIEW",String(report.wrong.length),RED]
+    // ---------------- STATS ----------------
+    let gap=9, cardW=(contentWidth-gap*2)/3;
+    let cards=[
+      ["SCORE",pct+"%",BLUE],
+      ["CORRECT",correct+" / "+total,GREEN],
+      ["NEEDS REVIEW",String(report.wrong.length),RED]
     ];
+
     cards.forEach((s,i)=>{
-      let x=margin+i*(cardW+gap); box(x,y,cardW,64,WHITE,BLUE_BORDER,7);
-      doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...MUTED); doc.text(s[0],x+11,y+15);
-      doc.setFontSize(18); doc.setTextColor(...s[2]); doc.text(s[1],x+11,y+43);
+      let x=margin+i*(cardW+gap);
+      box(x,y,cardW,64,WHITE,BLUE_BORDER,7);
+      doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+      doc.text(s[0],x+11,y+15);
+      doc.setFontSize(18); doc.setTextColor(...s[2]);
+      doc.text(s[1],x+11,y+43);
     });
     y+=78;
 
-    // Coverage
-    let totalSections=state.sourceChunks.length||0, coveredSections=(state.coveredSourceIds||[]).length;
+    // ---------------- COVERAGE ----------------
+    let totalSections=state.sourceChunks.length||0;
+    let coveredSections=(state.coveredSourceIds||[]).length;
     let totalConcepts=(state.conceptOrder||[]).length;
-    let coveredConcepts=(state.conceptOrder||[]).map(id=>state.concepts[id]).filter(c=>c&&c.attempts>0).length;
+    let coveredConcepts=(state.conceptOrder||[])
+      .map(id=>state.concepts[id])
+      .filter(c=>c&&c.attempts>0).length;
+
+    ensure(62);
     box(margin,y,contentWidth,61,BLUE_LIGHT,BLUE_BORDER,7);
     doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...BLUE_DARK);
     doc.text("COVERAGE",margin+11,y+15);
+
+    let cov="Source sections: "+coveredSections+" / "+totalSections+
+      "    •    Important concepts: "+coveredConcepts+" / "+totalConcepts;
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...TEXT);
-    let cov="Source sections: "+coveredSections+" / "+totalSections+"    •    Important concepts: "+coveredConcepts+" / "+totalConcepts;
-    doc.text(doc.splitTextToSize(cov,contentWidth-22).slice(0,2),margin+11,y+31);
+    doc.text(wrapped(cov,contentWidth-22,8.5,false).slice(0,2),margin+11,y+31);
     y+=76;
 
-    // Topics
+    // ---------------- TOPICS ----------------
     section("TOPICS TO STUDY");
+
     if(!report.topics.length){
+      ensure(44);
       box(margin,y,contentWidth,44,GREEN_LIGHT,BLUE_BORDER,6);
-      textBlock("No topics require review — excellent work.",margin+11,contentWidth-22,9.5,13,true,GREEN);
-      y+=54;
+      drawWrapped("No topics require review — excellent work.",margin+11,contentWidth-22,9.5,13,true,GREEN);
+      y+=10;
     }else{
       report.topics.forEach(topic=>{
-        ensure(32);
+        ensure(29);
         box(margin,y,contentWidth,23,BLUE_DARK,BLUE_DARK,5);
-        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...WHITE); doc.text(topic.topic,margin+10,y+15);
-        doc.setFontSize(8); doc.text(topic.count+" wrong",pageWidth-margin-10,y+15,{align:"right"}); y+=30;
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...WHITE);
+        doc.text(String(topic.topic||"Topic"),margin+10,y+15);
+        doc.setFontSize(8);
+        doc.text(String(topic.count||0)+" wrong",pageWidth-margin-10,y+15,{align:"right"});
+        y+=30;
 
         topic.subtopics.forEach(s=>{
+          let name=String(s.name||"Specific subtopic");
           let src="Source: "+(s.sources.join("; ")||"File/page not identified");
-          let srcLines=lines(src,contentWidth-36,7.8,false);
-          let nameLines=lines(s.name,contentWidth-36,9,true);
-          let h=14+Math.min(2,nameLines.length)*11+Math.min(2,srcLines.length)*10+10;
-          if(h>65) h=65;
-          ensure(h+8);
+          let content=s.sourceContents && s.sourceContents.length
+            ? "Content: "+s.sourceContents.join("; ")
+            : "";
+
+          let nameLines=wrapped(name,contentWidth-36,9,true);
+          let srcLines=wrapped(src,contentWidth-36,7.8,false);
+          let contentLines=content?wrapped(content,contentWidth-36,7.6,false):[];
+
+          // Fully calculate the card height from the text. No arbitrary 65pt cap.
+          let lineCount=Math.min(3,nameLines.length)+Math.min(4,srcLines.length)+Math.min(3,contentLines.length);
+          let h=18+lineCount*10+10;
+          ensure(h+7);
+
           box(margin+6,y,contentWidth-12,h,LIGHT,BLUE_BORDER,5);
+
+          let cy=y+14;
           doc.setFont("helvetica","bold"); doc.setFontSize(8.8); doc.setTextColor(...TEXT);
-          doc.text(nameLines.slice(0,2),margin+15,y+14);
+          doc.text(nameLines.slice(0,3),margin+15,cy);
+          cy+=Math.min(3,nameLines.length)*10+3;
+
           doc.setFont("helvetica","normal"); doc.setFontSize(7.8); doc.setTextColor(...MUTED);
-          doc.text(srcLines.slice(0,2),margin+15,y+14+Math.min(2,nameLines.length)*11+3);
-          y+=h+6;
+          doc.text(srcLines.slice(0,4),margin+15,cy);
+          cy+=Math.min(4,srcLines.length)*10;
+
+          if(content){
+            cy+=2;
+            doc.setFontSize(7.6);
+            doc.text(contentLines.slice(0,3),margin+15,cy);
+          }
+          y+=h+7;
         });
         y+=4;
       });
     }
 
-    // Wrong questions
+    // ---------------- WRONG QUESTIONS ----------------
     section("QUESTIONS YOU GOT WRONG");
+
     if(!report.wrong.length){
+      ensure(44);
       box(margin,y,contentWidth,44,GREEN_LIGHT,BLUE_BORDER,6);
-      textBlock("Perfect round — there are no incorrect answers to review.",margin+11,contentWidth-22,9.5,13,true,GREEN);
-      y+=54;
+      drawWrapped("Perfect round — there are no incorrect answers to review.",margin+11,contentWidth-22,9.5,13,true,GREEN);
+      y+=10;
     }else{
       report.wrong.forEach((h,i)=>{
-        let qLines=lines("Q"+(i+1)+". "+h.question,contentWidth-62,9.8,true);
-        let caseLines=h.scenario?lines(h.scenario,contentWidth-46,8):[];
-        let yourLines=lines(h.userAnswer||"No answer",contentWidth-46,8.3);
-        let correctLines=lines(h.correctAnswer||"Not available",contentWidth-46,8.3);
-        let detailParts=[];
-        let detailText="What you got wrong: "+(h.subtopic||h.topic||"Not identified")+
-          "\nSource: "+(h.sourceFile||"File not identified")+" — Page "+(h.sourcePage||"Not identified")+
-          (h.sourceContent?"\nSource content: "+h.sourceContent:"")+
-          (h.explanation?"\nExplanation: "+h.explanation:"");
-        let detailLines=lines(detailText,contentWidth-46,7.8);
-        let estimated=38+Math.min(3,qLines.length)*13+
-          (h.scenario?34+Math.min(2,caseLines.length)*10:0)+
-          32+Math.min(3,yourLines.length)*10+
-          32+Math.min(3,correctLines.length)*10+
-          24+Math.min(7,detailLines.length)*10+14;
+        // Start each question with a clean title block. No fixed-height outer card.
+        let qText="Q"+(i+1)+". "+String(h.question||"Question not available");
+        let qLines=wrapped(qText,contentWidth-55,9.8,true);
+        let qShown=qLines.slice(0,5);
+        let qH=20+qShown.length*13;
 
-        // Never allocate an arbitrary oversized box. Let the card break cleanly.
-        if(estimated>pageHeight-90) estimated=pageHeight-90;
-        ensure(Math.min(estimated,190));
+        ensure(qH+10);
+        box(margin,y,contentWidth,qH,WHITE,BLUE_BORDER,7);
 
-        let cardTop=y;
-        // Header strip
-        box(margin,cardTop,contentWidth,Math.min(estimated,185),WHITE,BLUE_BORDER,7);
-        doc.setFillColor(...RED); doc.roundedRect(margin+9,cardTop+9,30,19,4,4,"F");
+        doc.setFillColor(...RED);
+        doc.roundedRect(margin+9,y+9,30,19,4,4,"F");
         doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...WHITE);
-        doc.text("Q"+(i+1),margin+24,cardTop+22,{align:"center"});
-        doc.setFont("helvetica","bold"); doc.setFontSize(9.8); doc.setTextColor(...TEXT);
-        doc.text(qLines.slice(0,3),margin+48,cardTop+22);
-        let cursor=cardTop+28+Math.min(3,qLines.length)*13;
+        doc.text("Q"+(i+1),margin+24,y+22,{align:"center"});
 
-        function field(label,value,fill,stroke,color){
-          cursor+=5;
-          let ls=lines(value,contentWidth-46,8.2);
-          let bh=22+Math.min(3,ls.length)*10;
-          // If field won't fit, move to a new page and continue the same card.
-          if(cursor+bh>pageHeight-50){
-            footer(); doc.addPage(); y=38; cursor=y;
-          }
-          box(margin+12,cursor,contentWidth-24,bh,fill,stroke,5);
-          doc.setFont("helvetica","bold"); doc.setFontSize(7.2); doc.setTextColor(...color); doc.text(label,margin+19,cursor+11);
-          doc.setFont("helvetica","normal"); doc.setFontSize(8.2); doc.setTextColor(...TEXT); doc.text(ls.slice(0,3),margin+19,cursor+24);
-          cursor+=bh;
-        }
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.8); doc.setTextColor(...TEXT);
+        doc.text(qShown,margin+48,y+22);
+        y+=qH+7;
 
         if(h.scenario){
-          cursor+=5;
-          let bh=24+Math.min(2,caseLines.length)*10;
-          if(cursor+bh>pageHeight-50){footer();doc.addPage();y=38;cursor=y;}
-          box(margin+12,cursor,contentWidth-24,bh,BLUE_LIGHT,BLUE_BORDER,5);
-          doc.setFont("helvetica","bold");doc.setFontSize(7.2);doc.setTextColor(...BLUE);doc.text("CASE",margin+19,cursor+11);
-          doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...TEXT);doc.text(caseLines.slice(0,2),margin+19,cursor+24);
-          cursor+=bh;
+          drawField("CASE",h.scenario,BLUE_LIGHT,BLUE_BORDER,BLUE);
         }
 
-        field("YOUR ANSWER",h.userAnswer||"No answer",RED_LIGHT,RED,RED);
-        field("CORRECT / MODEL ANSWER",h.correctAnswer||"Not available",GREEN_LIGHT,GREEN,GREEN);
+        drawField("YOUR ANSWER",h.userAnswer||"No answer",RED_LIGHT,RED,RED);
+        drawField("CORRECT / MODEL ANSWER",h.correctAnswer||"Not available",GREEN_LIGHT,GREEN,GREEN);
 
-        cursor+=5;
-        let dl=detailLines.slice(0,7);
-        let dh=20+dl.length*10;
-        if(cursor+dh>pageHeight-50){footer();doc.addPage();y=38;cursor=y;}
-        box(margin+12,cursor,contentWidth-24,dh,LIGHT,BLUE_BORDER,5);
-        doc.setFont("helvetica","normal");doc.setFontSize(7.8);doc.setTextColor(...MUTED);doc.text(dl,margin+19,cursor+14);
-        y=cursor+dh+14;
+        let detailParts=[
+          "What you got wrong: "+(h.subtopic||h.topic||"Not identified"),
+          "Source: "+(h.sourceFile||"File not identified")+" — Page "+(h.sourcePage||"Not identified")
+        ];
+        if(h.sourceContent) detailParts.push("Source content: "+h.sourceContent);
+        if(h.explanation) detailParts.push("Explanation: "+h.explanation);
+
+        let detail=detailParts.join("\n");
+        let detailLines=wrapped(detail,contentWidth-38,7.8,false);
+        let shown=detailLines.slice(0,10);
+        let dh=20+shown.length*10;
+
+        if(y+dh>bottom) newPage();
+        box(margin,y,contentWidth,dh,LIGHT,BLUE_BORDER,5);
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.8); doc.setTextColor(...MUTED);
+        doc.text(shown,margin+12,y+14);
+        y+=dh+12;
       });
     }
 
     footer();
 
     // Specific, meaningful file name: subject + date + timestamp.
-    let safeSubject=(state.subject||"study-report").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+    let safeSubject=(state.subject||"study-report")
+      .replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
     let fileDate=new Date().toISOString().slice(0,10);
     let fileTime=new Date().toTimeString().slice(0,5).replace(":","-");
     doc.save((safeSubject||"study-report")+"-report-"+fileDate+"-"+fileTime+".pdf");
   }
-
-
 
   function showResults(){
     renderReportCard();
