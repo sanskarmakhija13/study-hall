@@ -473,7 +473,21 @@
   .wrong-label{font-weight:700;color:var(--pencil)}
   .coverage-summary-card{padding:12px 14px;margin-bottom:12px;background:rgba(31,122,90,.07);border:1px solid rgba(31,122,90,.22);border-radius:6px;font-size:13px}
   .coverage-summary-card strong{color:var(--green-check)}
+
   @media(max-width:700px){
+    .quiz-footer{
+      flex-direction:column;
+      align-items:stretch;
+    }
+    .quiz-footer #nextBtn{
+      order:1;
+      width:100%;
+    }
+    .quiz-footer #endQuizBtn{
+      order:2;
+      width:100%;
+    }
+
     .wrap{padding:18px 12px 40px}.masthead{margin-bottom:16px}.masthead h1{font-size:22px}
     .panel{padding:16px;margin-bottom:16px}.settings-grid{grid-template-columns:1fr;gap:13px}
     .btn{width:100%}.btn-row{flex-direction:column}.quiz-header{align-items:flex-start}
@@ -542,6 +556,500 @@
   .report-section h3{color:#2F6FA3 !important;}
   .option:hover:not(:disabled){border-color:#2F6FA3 !important;background:#F4FAFE !important;}
 
+
+  /* ---------- light / dark / system theme ---------- */
+  :root{
+    --theme-bg:#F4F8FC;
+    --theme-surface:#FFFFFF;
+    --theme-text:#123B5D;
+    --theme-muted:#5E7890;
+    --theme-border:#C9DCEC;
+    --theme-field:#FFFFFF;
+    --theme-field-lines:rgba(47,111,163,.22);
+    --theme-blue-soft:#EAF3FA;
+    --theme-hover:#F0F7FC;
+    --theme-shadow:rgba(18,59,93,.08);
+  }
+
+  body{background:var(--theme-bg) !important;color:var(--theme-text) !important;}
+  .panel,.question-card,.report-card,.report-stat,.wrong-item,.topic-row,.option,
+  .coverage-panel,.coverage-item,.caselet,.chip,.results-card,.breakdown-row{
+    background:var(--theme-surface) !important;color:var(--theme-text);
+  }
+  .masthead h1,.q-text,.question-card,.report-card,.report-section,
+  .wrong-q,.topic-name,.report-head h2{color:var(--theme-text);}
+  .masthead .tag,.quiz-subject,.score-readout,.file-status,.upload-help,.report-meta,
+  .coverage-note,.coverage-kicker,.report-section h3,.credit{color:var(--theme-muted);}
+  textarea,input[type="text"],input[type="password"],select{
+    background:var(--theme-field) !important;color:var(--theme-text) !important;
+    border-color:var(--theme-border) !important;
+  }
+  textarea{
+    background:repeating-linear-gradient(var(--theme-field),var(--theme-field) 27px,var(--theme-field-lines) 28px) !important;
+  }
+  .choice-pill,.file-btn,.chip,.btn.secondary{
+    background:var(--theme-surface) !important;color:var(--theme-text) !important;border-color:var(--theme-border) !important;
+  }
+  .choice-pill.active{background:var(--theme-blue-soft) !important;border-color:var(--rule-blue) !important;color:var(--theme-text) !important;}
+  .file-btn{background:var(--ink) !important;color:#FFFFFF !important;border-color:var(--ink) !important;}
+  .secondary-upload{background:var(--theme-surface) !important;color:var(--theme-text) !important;}
+  .file-btn:hover,.secondary-upload:hover,.option:hover:not(:disabled),.btn.secondary:hover{background:var(--theme-hover) !important;}
+  .coverage-summary-card{background:var(--theme-blue-soft) !important;}
+  .coverage-item.discovered{background:var(--theme-hover) !important;}
+  .coverage-bar{background:var(--theme-border) !important;}
+  .caselet{background:var(--theme-blue-soft) !important;}
+  .report-stat{box-shadow:0 1px 3px var(--theme-shadow);}
+  .report-card,.question-card{box-shadow:0 2px 12px var(--theme-shadow);}
+
+  .theme-switcher{
+    display:inline-flex;align-items:center;gap:3px;padding:3px;
+    border:1px solid var(--card-border);border-radius:999px;
+    background:var(--theme-surface);box-shadow:0 1px 4px var(--theme-shadow);
+  }
+  .theme-btn{
+    border:0;background:transparent;color:var(--theme-muted);
+    font-family:'IBM Plex Mono',monospace;font-size:9px;line-height:1;
+    padding:6px 8px;border-radius:999px;cursor:pointer;
+  }
+  .theme-btn.active{background:var(--theme-blue-soft);color:var(--theme-text);font-weight:600;}
+  .theme-btn:hover{color:var(--theme-text);}
+
+  @media (max-width:520px){
+    .theme-switcher{order:3;width:100%;justify-content:center;}
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --theme-bg:#0D1B28;
+      --theme-surface:#122638;
+      --theme-text:#EAF4FB;
+      --theme-muted:#9DB5C7;
+      --theme-border:#31546D;
+      --theme-field:#102433;
+      --theme-field-lines:rgba(126,179,217,.18);
+      --theme-blue-soft:#16374D;
+      --theme-hover:#18394F;
+      --theme-shadow:rgba(0,0,0,.28);
+    }
+    html[data-theme="light"]{
+      --theme-bg:#F4F8FC;--theme-surface:#FFFFFF;--theme-text:#123B5D;
+      --theme-muted:#5E7890;--theme-border:#C9DCEC;--theme-field:#FFFFFF;
+      --theme-field-lines:rgba(47,111,163,.22);--theme-blue-soft:#EAF3FA;
+      --theme-hover:#F0F7FC;--theme-shadow:rgba(18,59,93,.08);
+    }
+  }
+
+  html[data-theme="dark"]{
+    --theme-bg:#0D1B28;--theme-surface:#122638;--theme-text:#EAF4FB;
+    --theme-muted:#9DB5C7;--theme-border:#31546D;--theme-field:#102433;
+    --theme-field-lines:rgba(126,179,217,.18);--theme-blue-soft:#16374D;
+    --theme-hover:#18394F;--theme-shadow:rgba(0,0,0,.28);
+  }
+  html[data-theme="dark"] .folder-tab{background:#2F6FA3 !important;color:#FFFFFF !important;}
+  html[data-theme="dark"] .btn{background:#2F6FA3 !important;color:#FFFFFF !important;border-color:#4B87B7 !important;}
+  html[data-theme="dark"] .btn.secondary{background:#122638 !important;color:#EAF4FB !important;border-color:#55748B !important;}
+  html[data-theme="dark"] .file-btn{background:#2F6FA3 !important;color:#FFFFFF !important;border-color:#4B87B7 !important;}
+  html[data-theme="dark"] .secondary-upload{background:#122638 !important;color:#EAF4FB !important;border-color:#55748B !important;}
+  html[data-theme="dark"] .choice-pill.active,html[data-theme="dark"] .theme-btn.active{background:#1D4764 !important;color:#EAF4FB !important;border-color:#5D91B8 !important;}
+  html[data-theme="dark"] .option.reveal-correct,html[data-theme="dark"] .option.chosen-correct{background:#173D34 !important;}
+  html[data-theme="dark"] .option.chosen-wrong{background:#4A2028 !important;}
+  html[data-theme="dark"] .feedback.correct{background:#163A31 !important;}
+  html[data-theme="dark"] .feedback.incorrect{background:#47212A !important;}
+
+
+  /* =========================================================
+     DARK MODE — CHARCOAL / GITHUB / VS CODE INSPIRED
+     ========================================================= */
+  html[data-theme="dark"]{
+    color-scheme:dark;
+
+    --paper:#0D1117;
+    --paper-raised:#161B22;
+    --ink:#F0F6FC;
+    --pencil:#8B949E;
+    --pencil-faint:#6E7681;
+    --card-border:#30363D;
+    --red-pen:#F85149;
+    --red-wash:#3A171A;
+    --green-check:#3FB950;
+    --green-wash:#17341F;
+    --rule-blue:#58A6FF;
+    --shadow:0 2px 12px rgba(0,0,0,.32);
+
+    --theme-bg:#0D1117;
+    --theme-surface:#161B22;
+    --theme-text:#F0F6FC;
+    --theme-muted:#8B949E;
+    --theme-border:#30363D;
+    --theme-field:#0D1117;
+    --theme-field-lines:rgba(139,148,158,.14);
+    --theme-blue-soft:#0D1D30;
+    --theme-hover:#1C2128;
+    --theme-shadow:rgba(0,0,0,.32);
+  }
+
+  html[data-theme="dark"] body{
+    background:#0D1117 !important;
+    color:#F0F6FC !important;
+  }
+
+  html[data-theme="dark"] .wrap{
+    background:transparent !important;
+  }
+
+  /* Header */
+  html[data-theme="dark"] .masthead{
+    border-bottom-color:#30363D !important;
+  }
+  html[data-theme="dark"] .masthead h1{
+    color:#F0F6FC !important;
+  }
+  html[data-theme="dark"] .masthead .tag{
+    background:#161B22 !important;
+    color:#58A6FF !important;
+    border-color:#30363D !important;
+  }
+
+  /* Theme control */
+  html[data-theme="dark"] .theme-switcher{
+    background:#161B22 !important;
+    border-color:#30363D !important;
+    box-shadow:none !important;
+  }
+  html[data-theme="dark"] .theme-btn{
+    color:#8B949E !important;
+  }
+  html[data-theme="dark"] .theme-btn:hover{
+    color:#F0F6FC !important;
+  }
+  html[data-theme="dark"] .theme-btn.active{
+    background:#1F6FEB !important;
+    color:#FFFFFF !important;
+    border-color:#1F6FEB !important;
+  }
+
+  /* Main cards / panels */
+  html[data-theme="dark"] .panel,
+  html[data-theme="dark"] .question-card,
+  html[data-theme="dark"] .report-card,
+  html[data-theme="dark"] .report-stat,
+  html[data-theme="dark"] .wrong-item,
+  html[data-theme="dark"] .topic-row,
+  html[data-theme="dark"] .results-card,
+  html[data-theme="dark"] .breakdown-row,
+  html[data-theme="dark"] .coverage-panel,
+  html[data-theme="dark"] .coverage-item,
+  html[data-theme="dark"] .caselet{
+    background:#161B22 !important;
+    color:#F0F6FC !important;
+    border-color:#30363D !important;
+    box-shadow:0 2px 12px rgba(0,0,0,.20) !important;
+  }
+
+  /* Section tabs */
+  html[data-theme="dark"] .folder-tab{
+    background:#1F6FEB !important;
+    color:#FFFFFF !important;
+  }
+
+  /* Labels and secondary text */
+  html[data-theme="dark"] label.field-label,
+  html[data-theme="dark"] .upload-help,
+  html[data-theme="dark"] .file-status,
+  html[data-theme="dark"] .report-meta,
+  html[data-theme="dark"] .coverage-note,
+  html[data-theme="dark"] .coverage-kicker,
+  html[data-theme="dark"] .credit{
+    color:#8B949E !important;
+  }
+
+  /* Inputs */
+  html[data-theme="dark"] textarea,
+  html[data-theme="dark"] input[type="text"],
+  html[data-theme="dark"] input[type="password"],
+  html[data-theme="dark"] select{
+    background:#0D1117 !important;
+    color:#F0F6FC !important;
+    border-color:#30363D !important;
+    box-shadow:none !important;
+  }
+  html[data-theme="dark"] textarea{
+    background:
+      repeating-linear-gradient(
+        #0D1117,
+        #0D1117 27px,
+        rgba(139,148,158,.14) 28px
+      ) !important;
+  }
+  html[data-theme="dark"] textarea::placeholder,
+  html[data-theme="dark"] input::placeholder{
+    color:#6E7681 !important;
+  }
+  html[data-theme="dark"] textarea:focus,
+  html[data-theme="dark"] input:focus,
+  html[data-theme="dark"] select:focus{
+    border-color:#58A6FF !important;
+    box-shadow:0 0 0 2px rgba(88,166,255,.18) !important;
+  }
+
+  /* Buttons */
+  html[data-theme="dark"] .btn,
+  html[data-theme="dark"] .file-btn{
+    background:#1F6FEB !important;
+    color:#FFFFFF !important;
+    border-color:#1F6FEB !important;
+  }
+  html[data-theme="dark"] .btn:hover,
+  html[data-theme="dark"] .file-btn:hover{
+    background:#388BFD !important;
+    border-color:#388BFD !important;
+  }
+  html[data-theme="dark"] .btn.secondary,
+  html[data-theme="dark"] .secondary-upload{
+    background:#161B22 !important;
+    color:#F0F6FC !important;
+    border-color:#30363D !important;
+  }
+  html[data-theme="dark"] .btn.secondary:hover,
+  html[data-theme="dark"] .secondary-upload:hover{
+    background:#1C2128 !important;
+    border-color:#8B949E !important;
+  }
+
+  /* Choice controls */
+  html[data-theme="dark"] .choice-pill{
+    background:#161B22 !important;
+    color:#8B949E !important;
+    border-color:#30363D !important;
+  }
+  html[data-theme="dark"] .choice-pill:hover{
+    color:#F0F6FC !important;
+    border-color:#8B949E !important;
+    background:#1C2128 !important;
+  }
+  html[data-theme="dark"] .choice-pill.active{
+    background:#0D1D30 !important;
+    color:#58A6FF !important;
+    border-color:#58A6FF !important;
+  }
+
+  /* File chips */
+  html[data-theme="dark"] .chip{
+    background:#161B22 !important;
+    color:#F0F6FC !important;
+    border-color:#30363D !important;
+  }
+  html[data-theme="dark"] .chip .chip-remove{
+    background:#30363D !important;
+    color:#F0F6FC !important;
+  }
+
+  /* Coverage */
+  html[data-theme="dark"] .coverage-summary-card{
+    background:#0D1D30 !important;
+    border-color:#1F6FEB !important;
+  }
+  html[data-theme="dark"] .coverage-bar{
+    background:#30363D !important;
+  }
+  html[data-theme="dark"] .coverage-fill{
+    background:#58A6FF !important;
+  }
+  html[data-theme="dark"] .coverage-item{
+    background:#161B22 !important;
+  }
+  html[data-theme="dark"] .coverage-item.discovered{
+    background:#1C2128 !important;
+  }
+
+  /* Question options */
+  html[data-theme="dark"] .option{
+    background:#161B22 !important;
+    color:#F0F6FC !important;
+    border-color:#30363D !important;
+  }
+  html[data-theme="dark"] .option:hover:not(:disabled){
+    background:#1C2128 !important;
+    border-color:#58A6FF !important;
+  }
+  html[data-theme="dark"] .option.reveal-correct,
+  html[data-theme="dark"] .option.chosen-correct{
+    background:#17341F !important;
+    border-color:#3FB950 !important;
+    color:#F0F6FC !important;
+  }
+  html[data-theme="dark"] .option.chosen-wrong{
+    background:#3A171A !important;
+    border-color:#F85149 !important;
+    color:#F0F6FC !important;
+  }
+
+  /* Feedback */
+  html[data-theme="dark"] .feedback.correct{
+    background:#17341F !important;
+    border-color:#3FB950 !important;
+    color:#F0F6FC !important;
+  }
+  html[data-theme="dark"] .feedback.incorrect{
+    background:#3A171A !important;
+    border-color:#F85149 !important;
+    color:#F0F6FC !important;
+  }
+
+  /* Reports */
+  html[data-theme="dark"] .report-grade{
+    background:#17341F !important;
+    color:#3FB950 !important;
+    border-color:#3FB950 !important;
+  }
+  html[data-theme="dark"] .report-stat{
+    background:#161B22 !important;
+  }
+  html[data-theme="dark"] .report-stat .value,
+  html[data-theme="dark"] .topic-name,
+  html[data-theme="dark"] .report-card h2,
+  html[data-theme="dark"] .report-card h3{
+    color:#F0F6FC !important;
+  }
+  html[data-theme="dark"] .report-section h3{
+    color:#58A6FF !important;
+  }
+
+  /* Scrollbars */
+  html[data-theme="dark"] *{
+    scrollbar-color:#30363D #0D1117;
+  }
+
+
+  /* AUTO = system preference. Auto-dark intentionally uses the same
+     Charcoal/GitHub palette as explicit Dark mode. */
+  html[data-theme="auto"]{
+    color-scheme:light;
+  }
+
+  @media (prefers-color-scheme: dark){
+    html[data-theme="auto"]{
+      color-scheme:dark;
+      --paper:#0D1117;
+      --paper-raised:#161B22;
+      --ink:#F0F6FC;
+      --pencil:#8B949E;
+      --pencil-faint:#6E7681;
+      --card-border:#30363D;
+      --red-pen:#F85149;
+      --red-wash:#3A171A;
+      --green-check:#3FB950;
+      --green-wash:#17341F;
+      --rule-blue:#58A6FF;
+      --shadow:0 2px 12px rgba(0,0,0,.32);
+
+      --theme-bg:#0D1117;
+      --theme-surface:#161B22;
+      --theme-text:#F0F6FC;
+      --theme-muted:#8B949E;
+      --theme-border:#30363D;
+      --theme-field:#0D1117;
+      --theme-field-lines:rgba(139,148,158,.14);
+      --theme-blue-soft:#0D1D30;
+      --theme-hover:#1C2128;
+      --theme-shadow:rgba(0,0,0,.32);
+    }
+
+    html[data-theme="auto"] body{
+      background:#0D1117 !important;
+      color:#F0F6FC !important;
+    }
+    html[data-theme="auto"] .masthead h1{color:#F0F6FC !important;}
+    html[data-theme="auto"] .masthead .tag{
+      background:#161B22 !important;color:#58A6FF !important;border-color:#30363D !important;
+    }
+    html[data-theme="auto"] .theme-switcher{
+      background:#161B22 !important;border-color:#30363D !important;box-shadow:none !important;
+    }
+    html[data-theme="auto"] .theme-btn{color:#8B949E !important;}
+    html[data-theme="auto"] .theme-btn:hover{color:#F0F6FC !important;}
+    html[data-theme="auto"] .theme-btn.active{
+      background:#1F6FEB !important;color:#FFFFFF !important;border-color:#1F6FEB !important;
+    }
+
+    html[data-theme="auto"] .panel,
+    html[data-theme="auto"] .question-card,
+    html[data-theme="auto"] .report-card,
+    html[data-theme="auto"] .report-stat,
+    html[data-theme="auto"] .wrong-item,
+    html[data-theme="auto"] .topic-row,
+    html[data-theme="auto"] .results-card,
+    html[data-theme="auto"] .breakdown-row,
+    html[data-theme="auto"] .coverage-panel,
+    html[data-theme="auto"] .coverage-item,
+    html[data-theme="auto"] .caselet{
+      background:#161B22 !important;color:#F0F6FC !important;
+      border-color:#30363D !important;box-shadow:0 2px 12px rgba(0,0,0,.20) !important;
+    }
+
+    html[data-theme="auto"] .folder-tab{
+      background:#1F6FEB !important;color:#FFFFFF !important;
+    }
+    html[data-theme="auto"] textarea,
+    html[data-theme="auto"] input[type="text"],
+    html[data-theme="auto"] input[type="password"],
+    html[data-theme="auto"] select{
+      background:#0D1117 !important;color:#F0F6FC !important;border-color:#30363D !important;
+    }
+    html[data-theme="auto"] textarea{
+      background:repeating-linear-gradient(#0D1117,#0D1117 27px,rgba(139,148,158,.14) 28px) !important;
+    }
+    html[data-theme="auto"] textarea::placeholder,
+    html[data-theme="auto"] input::placeholder{color:#6E7681 !important;}
+
+    html[data-theme="auto"] .btn,
+    html[data-theme="auto"] .file-btn{
+      background:#1F6FEB !important;color:#FFFFFF !important;border-color:#1F6FEB !important;
+    }
+    html[data-theme="auto"] .btn:hover,
+    html[data-theme="auto"] .file-btn:hover{
+      background:#388BFD !important;border-color:#388BFD !important;
+    }
+    html[data-theme="auto"] .btn.secondary,
+    html[data-theme="auto"] .secondary-upload{
+      background:#161B22 !important;color:#F0F6FC !important;border-color:#30363D !important;
+    }
+    html[data-theme="auto"] .choice-pill{
+      background:#161B22 !important;color:#8B949E !important;border-color:#30363D !important;
+    }
+    html[data-theme="auto"] .choice-pill.active{
+      background:#0D1D30 !important;color:#58A6FF !important;border-color:#58A6FF !important;
+    }
+    html[data-theme="auto"] .chip{
+      background:#161B22 !important;color:#F0F6FC !important;border-color:#30363D !important;
+    }
+    html[data-theme="auto"] .coverage-summary-card{
+      background:#0D1D30 !important;border-color:#1F6FEB !important;
+    }
+    html[data-theme="auto"] .coverage-bar{background:#30363D !important;}
+    html[data-theme="auto"] .coverage-fill{background:#58A6FF !important;}
+    html[data-theme="auto"] .option{
+      background:#161B22 !important;color:#F0F6FC !important;border-color:#30363D !important;
+    }
+    html[data-theme="auto"] .option:hover:not(:disabled){
+      background:#1C2128 !important;border-color:#58A6FF !important;
+    }
+    html[data-theme="auto"] .option.reveal-correct,
+    html[data-theme="auto"] .option.chosen-correct{
+      background:#17341F !important;border-color:#3FB950 !important;color:#F0F6FC !important;
+    }
+    html[data-theme="auto"] .option.chosen-wrong{
+      background:#3A171A !important;border-color:#F85149 !important;color:#F0F6FC !important;
+    }
+    html[data-theme="auto"] .feedback.correct{
+      background:#17341F !important;border-color:#3FB950 !important;color:#F0F6FC !important;
+    }
+    html[data-theme="auto"] .feedback.incorrect{
+      background:#3A171A !important;border-color:#F85149 !important;color:#F0F6FC !important;
+    }
+    html[data-theme="auto"] *{scrollbar-color:#30363D #0D1117;}
+  }
+
 </style>
 </head>
 <body>
@@ -550,6 +1058,11 @@
   <div class="masthead">
     <h1>Study Hall</h1>
     <span class="tag">quiz generator</span>
+    <div class="theme-switcher" id="themeSwitcher" aria-label="Theme">
+      <button type="button" class="theme-btn" data-theme-choice="light" title="Light mode">☼ Light</button>
+      <button type="button" class="theme-btn active" data-theme-choice="auto" title="Use system setting">◐ Auto</button>
+      <button type="button" class="theme-btn" data-theme-choice="dark" title="Dark mode">☾ Dark</button>
+    </div>
   </div>
 
   <!-- ============ SETUP SCREEN ============ -->
@@ -767,6 +1280,45 @@
   let downloadReportBtn = document.getElementById("downloadReportBtn");
   let retakeBtn = document.getElementById("retakeBtn");
   let newMaterialBtn = document.getElementById("newMaterialBtn");
+
+  // ---------------- theme ----------------
+  function applyTheme(choice){
+    let mode=["light","auto","dark"].includes(choice) ? choice : "auto";
+    document.documentElement.dataset.theme=mode;
+    try{ localStorage.setItem("studyHallTheme",mode); }catch(_){}
+
+    document.querySelectorAll(".theme-btn").forEach(btn=>{
+      let active=btn.dataset.themeChoice===mode;
+      btn.classList.toggle("active",active);
+      btn.setAttribute("aria-pressed",active?"true":"false");
+    });
+  }
+
+  // Auto is the default. Light/Dark are only used when the user explicitly selects them.
+  let savedTheme="auto";
+  try{
+    let stored=localStorage.getItem("studyHallTheme");
+    savedTheme=["light","dark","auto"].includes(stored) ? stored : "auto";
+  }catch(_){}
+  applyTheme(savedTheme);
+
+  document.querySelectorAll(".theme-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>applyTheme(btn.dataset.themeChoice));
+  });
+
+  // When Auto is selected, the CSS media query follows the OS automatically.
+  // This listener forces a repaint for browsers that cache theme variables.
+  const systemTheme=window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  if(systemTheme){
+    const refreshAuto=()=>{
+      if(document.documentElement.dataset.theme==="auto"){
+        document.documentElement.dataset.theme="";
+        requestAnimationFrame(()=>{ document.documentElement.dataset.theme="auto"; });
+      }
+    };
+    if(systemTheme.addEventListener) systemTheme.addEventListener("change",refreshAuto);
+    else if(systemTheme.addListener) systemTheme.addListener(refreshAuto);
+  }
 
   // ---------------- pill groups ----------------
   function wirePillGroup(group, stateKey){
@@ -1427,7 +1979,7 @@ function formatSelectedSource(chunks){
     }else{
       targetInstruction=
         "\nNEW SOURCE SECTION: identify the most important concept worth testing first. "+
-        "Also return 3-6 important concepts in conceptInventory for later coverage.";
+        "Also return 3-4 important concepts in conceptInventory for later coverage.";
     }
 
     let focusInstruction=focus==="fact"
@@ -1450,7 +2002,7 @@ function formatSelectedSource(chunks){
 
     let last=null;
     let lastValidationError="";
-    for(let attempt=0;attempt<3;attempt++){
+    for(let attempt=0;attempt<2;attempt++){
       let retry="";
       if(attempt>0){
         retry=
@@ -1538,6 +2090,8 @@ function formatSelectedSource(chunks){
     state.sourceText = text;
     state.subject = subjectInput.value.trim();
     state.difficulty = difficultySelect.value;
+    state.startedAt = new Date().toISOString();
+    state.completedAt = null;
     state.history = [];
     state.askedTexts = [];
     state.askedConcepts = [];
@@ -1924,6 +2478,7 @@ function formatSelectedSource(chunks){
   }
 
   function renderReportCard(){
+    state.completedAt = new Date().toISOString();
     let total = state.score.total;
     let correct = state.score.correct;
     let pct = total ? Math.round((correct / total) * 100) : 0;
@@ -1935,7 +2490,12 @@ function formatSelectedSource(chunks){
     state.reportTopics = report.topics;
     state.reportGenerated = true;
 
-    reportSubject.textContent = state.subject || "Study material";
+    reportSubject.textContent =
+      (state.subject || "Study material") +
+      " • " +
+      new Date(state.completedAt || Date.now()).toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}) +
+      " • " +
+      new Date(state.completedAt || Date.now()).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
     reportGrade.textContent = grade;
     reportScore.textContent = pct + "%";
     reportCorrect.textContent = correct + " / " + total;
@@ -2004,336 +2564,221 @@ function formatSelectedSource(chunks){
 
     let { jsPDF } = window.jspdf;
     let doc = new jsPDF({unit:"pt",format:"a4"});
-    let margin = 42;
-    let pageWidth = doc.internal.pageSize.getWidth();
-    let pageHeight = doc.internal.pageSize.getHeight();
-    let contentWidth = pageWidth - margin*2;
-    let y = 42;
+    let margin=40, pageWidth=doc.internal.pageSize.getWidth(), pageHeight=doc.internal.pageSize.getHeight();
+    let contentWidth=pageWidth-margin*2, y=40;
 
-    // Study Hall blue/white visual system.
-    let BLUE = [21,91,138];
-    let BLUE_DARK = [18,59,93];
-    let BLUE_LIGHT = [237,246,251];
-    let BLUE_BORDER = [201,220,236];
-    let TEXT = [18,59,93];
-    let MUTED = [94,120,144];
-    let GREEN = [31,122,90];
-    let GREEN_LIGHT = [232,246,239];
-    let RED = [200,62,77];
-    let RED_LIGHT = [253,236,239];
-    let WHITE = [255,255,255];
-    let LIGHT = [247,250,253];
+    let BLUE=[21,91,138], BLUE_DARK=[18,59,93], BLUE_LIGHT=[237,246,251],
+        BLUE_BORDER=[201,220,236], TEXT=[18,59,93], MUTED=[94,120,144],
+        GREEN=[31,122,90], GREEN_LIGHT=[232,246,239], RED=[200,62,77],
+        RED_LIGHT=[253,236,239], WHITE=[255,255,255], LIGHT=[247,250,253];
 
-    let total = state.score.total;
-    let correct = state.score.correct;
-    let pct = total ? Math.round((correct/total)*100) : 0;
-    let grade = total ? (pct>=90?"A+":pct>=80?"A":pct>=70?"B":pct>=60?"C":"D") : "-";
-    let report = buildReportData();
+    let total=state.score.total, correct=state.score.correct;
+    let pct=total?Math.round(correct/total*100):0;
+    let grade=total?(pct>=90?"A+":pct>=80?"A":pct>=70?"B":pct>=60?"C":"D"):"-";
+    let report=buildReportData();
 
-    function addPageNumber(){
-      let page = doc.internal.getNumberOfPages();
+    let generatedAt=new Date();
+    let dateText=generatedAt.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
+    let timeText=generatedAt.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+
+    function footer(){
+      let page=doc.internal.getNumberOfPages();
       doc.setDrawColor(...BLUE_BORDER);
-      doc.line(margin,pageHeight-31,pageWidth-margin,pageHeight-31);
-      doc.setFont("helvetica","normal");
-      doc.setFontSize(8.5);
-      doc.setTextColor(...MUTED);
-      doc.text("Study Hall",margin,pageHeight-18);
-      doc.text("Page "+page,pageWidth-margin,pageHeight-18,{align:"right"});
+      doc.line(margin,pageHeight-29,pageWidth-margin,pageHeight-29);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MUTED);
+      doc.text("Study Hall • "+(state.subject||"Study Report"),margin,pageHeight-17);
+      doc.text("Page "+page,pageWidth-margin,pageHeight-17,{align:"right"});
     }
-
-    function newPage(){
-      addPageNumber();
-      doc.addPage();
-      y = 42;
+    function nextPage(){
+      footer(); doc.addPage(); y=38;
     }
-
-    function ensureSpace(h){
-      if(y+h > pageHeight-48) newPage();
+    function ensure(h){
+      if(y+h>pageHeight-46) nextPage();
     }
-
-    function roundRect(x,y0,w,h,fill,stroke,r=7){
-      doc.setFillColor(...fill);
-      doc.setDrawColor(...stroke);
+    function box(x,y0,w,h,fill,stroke,r=6){
+      doc.setFillColor(...fill); doc.setDrawColor(...stroke);
       doc.roundedRect(x,y0,w,h,r,r,"FD");
     }
-
-    function wrappedLines(txt,width,size=10,bold=false){
-      doc.setFont("helvetica",bold?"bold":"normal");
-      doc.setFontSize(size);
+    function lines(txt,width,size=9,bold=false){
+      doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(size);
       return doc.splitTextToSize(String(txt||""),width);
     }
-
-    function addWrapped(txt,x,width,size=10,leading=13,bold=false,color=TEXT){
-      doc.setFont("helvetica",bold?"bold":"normal");
-      doc.setFontSize(size);
-      doc.setTextColor(...color);
-      let lines = doc.splitTextToSize(String(txt||""),width);
-      ensureSpace(lines.length*leading+3);
-      doc.text(lines,x,y);
-      y += lines.length*leading;
+    function textBlock(txt,x,width,size=9,lead=12,bold=false,color=TEXT){
+      doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(size); doc.setTextColor(...color);
+      let ls=doc.splitTextToSize(String(txt||""),width);
+      ensure(ls.length*lead+4); doc.text(ls,x,y); y+=ls.length*lead; return ls.length;
+    }
+    function section(label){
+      ensure(34); doc.setFillColor(...BLUE); doc.roundedRect(margin,y,contentWidth,23,5,5,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...WHITE);
+      doc.text(label,margin+11,y+15); y+=32;
+    }
+    function safeBoxText(txt,x,width,size=8.5,lead=11,maxLines=8){
+      doc.setFont("helvetica","normal"); doc.setFontSize(size); doc.setTextColor(...TEXT);
+      let ls=doc.splitTextToSize(String(txt||"Not available"),width).slice(0,maxLines);
+      doc.text(ls,x,y); return ls.length*lead;
     }
 
-    function addSectionTitle(label){
-      ensureSpace(35);
-      doc.setFillColor(...BLUE);
-      doc.roundedRect(margin,y,contentWidth,24,5,5,"F");
-      doc.setFont("helvetica","bold");
-      doc.setFontSize(10);
-      doc.setTextColor(...WHITE);
-      doc.text(label,margin+12,y+16);
-      y += 35;
-    }
+    // Header
+    doc.setFillColor(...BLUE); doc.rect(0,0,pageWidth,7,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(24); doc.setTextColor(...BLUE_DARK);
+    doc.text("Study Hall",margin,42);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
+    doc.text("QUIZ REPORT",pageWidth-margin,41,{align:"right"});
+    y=62; doc.setDrawColor(...BLUE_BORDER); doc.line(margin,y,pageWidth-margin,y); y+=22;
 
-    // ---------- Cover / header ----------
-    doc.setFillColor(...BLUE);
-    doc.rect(0,0,pageWidth,8,"F");
+    // Specific study name + timestamp
+    let subject=state.subject||"Study material";
+    doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.setTextColor(...TEXT);
+    let titleLines=doc.splitTextToSize(subject,contentWidth-150);
+    doc.text(titleLines.slice(0,2),margin,y);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
+    doc.text(dateText+" • "+timeText,pageWidth-margin,y,{align:"right"});
+    y+=Math.max(26,titleLines.slice(0,2).length*16)+10;
 
-    doc.setFont("helvetica","bold");
-    doc.setFontSize(25);
-    doc.setTextColor(...BLUE_DARK);
-    doc.text("Study Hall",margin,y+16);
+    // Grade badge
+    let gf=pct>=70?GREEN_LIGHT:RED_LIGHT, gs=pct>=70?GREEN:RED;
+    box(pageWidth-margin-72,y-30,72,42,gf,gs,8);
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...gs);
+    doc.text("GRADE",pageWidth-margin-36,y-14,{align:"center"});
+    doc.setFontSize(19); doc.text(grade,pageWidth-margin-36,y+3,{align:"center"});
 
-    doc.setFont("helvetica","normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...MUTED);
-    doc.text("QUIZ REPORT",pageWidth-margin,y+15,{align:"right"});
-
-    y += 38;
-    doc.setDrawColor(...BLUE_BORDER);
-    doc.line(margin,y,pageWidth-margin,y);
-    y += 24;
-
-    doc.setFont("helvetica","bold");
-    doc.setFontSize(17);
-    doc.setTextColor(...TEXT);
-    doc.text("Study Report Card",margin,y);
-
-    doc.setFont("helvetica","normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(...MUTED);
-    doc.text(state.subject || "Study material",margin,y+17);
-
-    // Grade badge.
-    let gradeFill = pct>=70 ? GREEN_LIGHT : RED_LIGHT;
-    let gradeStroke = pct>=70 ? GREEN : RED;
-    roundRect(pageWidth-margin-76,y-7,76,42,gradeFill,gradeStroke,8);
-    doc.setFont("helvetica","bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...gradeStroke);
-    doc.text("GRADE",pageWidth-margin-38,y+5,{align:"center"});
-    doc.setFontSize(21);
-    doc.text(grade,pageWidth-margin-38,y+26,{align:"center"});
-    y += 56;
-
-    // Summary stat cards.
-    let gap = 10;
-    let cardW = (contentWidth-gap*2)/3;
-    let stats = [
-      {label:"SCORE",value:pct+"%",accent:BLUE},
-      {label:"CORRECT",value:correct+" / "+total,accent:GREEN},
-      {label:"NEEDS REVIEW",value:String(report.wrong.length),accent:RED}
+    // Stats
+    let gap=9, cardW=(contentWidth-gap*2)/3, cards=[
+      ["SCORE",pct+"%",BLUE],["CORRECT",correct+" / "+total,GREEN],["NEEDS REVIEW",String(report.wrong.length),RED]
     ];
-
-    stats.forEach((s,i)=>{
-      let x=margin+i*(cardW+gap);
-      roundRect(x,y,cardW,72,WHITE,BLUE_BORDER,7);
-      doc.setFont("helvetica","bold");
-      doc.setFontSize(8.5);
-      doc.setTextColor(...MUTED);
-      doc.text(s.label,x+12,y+16);
-      doc.setFontSize(20);
-      doc.setTextColor(...s.accent);
-      doc.text(s.value,x+12,y+47);
+    cards.forEach((s,i)=>{
+      let x=margin+i*(cardW+gap); box(x,y,cardW,64,WHITE,BLUE_BORDER,7);
+      doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...MUTED); doc.text(s[0],x+11,y+15);
+      doc.setFontSize(18); doc.setTextColor(...s[2]); doc.text(s[1],x+11,y+43);
     });
-    y += 90;
+    y+=78;
 
-    // Coverage summary.
-    let totalSections=state.sourceChunks.length||0;
-    let coveredSections=(state.coveredSourceIds||[]).length;
+    // Coverage
+    let totalSections=state.sourceChunks.length||0, coveredSections=(state.coveredSourceIds||[]).length;
     let totalConcepts=(state.conceptOrder||[]).length;
-    let coveredConcepts=(state.conceptOrder||[])
-      .map(id=>state.concepts[id])
-      .filter(c=>c && c.attempts>0).length;
+    let coveredConcepts=(state.conceptOrder||[]).map(id=>state.concepts[id]).filter(c=>c&&c.attempts>0).length;
+    box(margin,y,contentWidth,61,BLUE_LIGHT,BLUE_BORDER,7);
+    doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...BLUE_DARK);
+    doc.text("COVERAGE",margin+11,y+15);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...TEXT);
+    let cov="Source sections: "+coveredSections+" / "+totalSections+"    •    Important concepts: "+coveredConcepts+" / "+totalConcepts;
+    doc.text(doc.splitTextToSize(cov,contentWidth-22).slice(0,2),margin+11,y+31);
+    y+=76;
 
-    roundRect(margin,y,contentWidth,64,BLUE_LIGHT,BLUE_BORDER,7);
-    doc.setFont("helvetica","bold");
-    doc.setFontSize(9.5);
-    doc.setTextColor(...BLUE_DARK);
-    doc.text("COVERAGE",margin+12,y+17);
-    doc.setFont("helvetica","normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...TEXT);
-    doc.text(
-      "Sections discovered: "+coveredSections+" / "+totalSections+
-      "    |    Important concepts tested: "+coveredConcepts+" / "+totalConcepts,
-      margin+12,y+36
-    );
-    doc.setDrawColor(...BLUE_BORDER);
-    doc.line(margin+12,y+48,pageWidth-margin-12,y+48);
-    doc.setFontSize(8.5);
-    doc.setTextColor(...MUTED);
-    doc.text(
-      coveredConcepts===totalConcepts && totalConcepts>0
-        ? "All tracked concepts were covered; reinforcement focused on weak areas."
-        : "First-pass coverage prioritizes important concepts before reinforcement.",
-      margin+12,y+58
-    );
-    y += 82;
-
-    // ---------- Topics ----------
-    addSectionTitle("TOPICS TO STUDY");
-
+    // Topics
+    section("TOPICS TO STUDY");
     if(!report.topics.length){
-      roundRect(margin,y,contentWidth,48,BLUE_LIGHT,BLUE_BORDER,6);
-      addWrapped("No topics require review - excellent work.",margin+12,contentWidth-24,10.5,14,true,GREEN);
-      y += 58;
+      box(margin,y,contentWidth,44,GREEN_LIGHT,BLUE_BORDER,6);
+      textBlock("No topics require review — excellent work.",margin+11,contentWidth-22,9.5,13,true,GREEN);
+      y+=54;
     }else{
-      report.topics.forEach(t=>{
-        let topicHeight = 26 + t.subtopics.length*48 + 10;
-        ensureSpace(Math.min(topicHeight,160));
+      report.topics.forEach(topic=>{
+        ensure(32);
+        box(margin,y,contentWidth,23,BLUE_DARK,BLUE_DARK,5);
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...WHITE); doc.text(topic.topic,margin+10,y+15);
+        doc.setFontSize(8); doc.text(topic.count+" wrong",pageWidth-margin-10,y+15,{align:"right"}); y+=30;
 
-        let topicTop=y;
-        roundRect(margin,topicTop,contentWidth,26,BLUE_DARK,BLUE_DARK,6);
-        doc.setFont("helvetica","bold");
-        doc.setFontSize(10.5);
-        doc.setTextColor(...WHITE);
-        doc.text(t.topic,margin+12,topicTop+17);
-
-        let countText=t.count+" wrong";
-        doc.setFontSize(8.5);
-        doc.text(countText,pageWidth-margin-12,topicTop+17,{align:"right"});
-        y += 35;
-
-        t.subtopics.forEach((s,idx)=>{
-          ensureSpace(54);
-
-          let boxH=42;
-          roundRect(margin+8,y,contentWidth-16,boxH,LIGHT,BLUE_BORDER,5);
-
-          doc.setFont("helvetica","bold");
-          doc.setFontSize(9.2);
-          doc.setTextColor(...TEXT);
-          let subLines=doc.splitTextToSize(
-            s.name,
-            contentWidth-38
-          );
-          doc.text(subLines.slice(0,2),margin+18,y+14);
-
-          doc.setFont("helvetica","normal");
-          doc.setFontSize(8.2);
-          doc.setTextColor(...MUTED);
-          let sourceText="Source: "+(s.sources.join("; ")||"File/page not identified");
-          let sourceLines=doc.splitTextToSize(sourceText,contentWidth-38);
-          doc.text(sourceLines.slice(0,2),margin+18,y+29);
-
-          y += boxH+7;
+        topic.subtopics.forEach(s=>{
+          let src="Source: "+(s.sources.join("; ")||"File/page not identified");
+          let srcLines=lines(src,contentWidth-36,7.8,false);
+          let nameLines=lines(s.name,contentWidth-36,9,true);
+          let h=14+Math.min(2,nameLines.length)*11+Math.min(2,srcLines.length)*10+10;
+          if(h>65) h=65;
+          ensure(h+8);
+          box(margin+6,y,contentWidth-12,h,LIGHT,BLUE_BORDER,5);
+          doc.setFont("helvetica","bold"); doc.setFontSize(8.8); doc.setTextColor(...TEXT);
+          doc.text(nameLines.slice(0,2),margin+15,y+14);
+          doc.setFont("helvetica","normal"); doc.setFontSize(7.8); doc.setTextColor(...MUTED);
+          doc.text(srcLines.slice(0,2),margin+15,y+14+Math.min(2,nameLines.length)*11+3);
+          y+=h+6;
         });
-
-        y += 7;
+        y+=4;
       });
     }
 
-    // ---------- Wrong answers ----------
-    addSectionTitle("QUESTIONS YOU GOT WRONG");
-
+    // Wrong questions
+    section("QUESTIONS YOU GOT WRONG");
     if(!report.wrong.length){
-      roundRect(margin,y,contentWidth,54,GREEN_LIGHT,BLUE_BORDER,6);
-      addWrapped("Perfect round - there are no incorrect answers to review.",margin+12,contentWidth-24,10.5,14,true,GREEN);
-      y += 65;
+      box(margin,y,contentWidth,44,GREEN_LIGHT,BLUE_BORDER,6);
+      textBlock("Perfect round — there are no incorrect answers to review.",margin+11,contentWidth-22,9.5,13,true,GREEN);
+      y+=54;
     }else{
       report.wrong.forEach((h,i)=>{
-        // Question header
-        let questionLines=wrappedLines("Q"+(i+1)+". "+h.question,contentWidth-24,10.5,true);
-        let baseH=35+questionLines.length*14;
-        if(h.scenario) baseH+=34;
-        baseH+=120;
-        ensureSpace(Math.min(baseH,210));
+        let qLines=lines("Q"+(i+1)+". "+h.question,contentWidth-62,9.8,true);
+        let caseLines=h.scenario?lines(h.scenario,contentWidth-46,8):[];
+        let yourLines=lines(h.userAnswer||"No answer",contentWidth-46,8.3);
+        let correctLines=lines(h.correctAnswer||"Not available",contentWidth-46,8.3);
+        let detailParts=[];
+        let detailText="What you got wrong: "+(h.subtopic||h.topic||"Not identified")+
+          "\nSource: "+(h.sourceFile||"File not identified")+" — Page "+(h.sourcePage||"Not identified")+
+          (h.sourceContent?"\nSource content: "+h.sourceContent:"")+
+          (h.explanation?"\nExplanation: "+h.explanation:"");
+        let detailLines=lines(detailText,contentWidth-46,7.8);
+        let estimated=38+Math.min(3,qLines.length)*13+
+          (h.scenario?34+Math.min(2,caseLines.length)*10:0)+
+          32+Math.min(3,yourLines.length)*10+
+          32+Math.min(3,correctLines.length)*10+
+          24+Math.min(7,detailLines.length)*10+14;
 
-        let start=y;
-        let borderColor=RED;
-        roundRect(margin,start,contentWidth,Math.min(baseH,360),WHITE,BLUE_BORDER,7);
+        // Never allocate an arbitrary oversized box. Let the card break cleanly.
+        if(estimated>pageHeight-90) estimated=pageHeight-90;
+        ensure(Math.min(estimated,190));
 
-        // Q badge
-        doc.setFillColor(...RED);
-        doc.roundedRect(margin+10,start+10,32,20,4,4,"F");
-        doc.setFont("helvetica","bold");
-        doc.setFontSize(9);
-        doc.setTextColor(...WHITE);
-        doc.text("Q"+(i+1),margin+26,start+24,{align:"center"});
+        let cardTop=y;
+        // Header strip
+        box(margin,cardTop,contentWidth,Math.min(estimated,185),WHITE,BLUE_BORDER,7);
+        doc.setFillColor(...RED); doc.roundedRect(margin+9,cardTop+9,30,19,4,4,"F");
+        doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...WHITE);
+        doc.text("Q"+(i+1),margin+24,cardTop+22,{align:"center"});
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.8); doc.setTextColor(...TEXT);
+        doc.text(qLines.slice(0,3),margin+48,cardTop+22);
+        let cursor=cardTop+28+Math.min(3,qLines.length)*13;
 
-        // Question
-        doc.setFont("helvetica","bold");
-        doc.setFontSize(10.5);
-        doc.setTextColor(...TEXT);
-        doc.text(questionLines,margin+52,start+24);
-        let cursor=start+28+questionLines.length*14;
+        function field(label,value,fill,stroke,color){
+          cursor+=5;
+          let ls=lines(value,contentWidth-46,8.2);
+          let bh=22+Math.min(3,ls.length)*10;
+          // If field won't fit, move to a new page and continue the same card.
+          if(cursor+bh>pageHeight-50){
+            footer(); doc.addPage(); y=38; cursor=y;
+          }
+          box(margin+12,cursor,contentWidth-24,bh,fill,stroke,5);
+          doc.setFont("helvetica","bold"); doc.setFontSize(7.2); doc.setTextColor(...color); doc.text(label,margin+19,cursor+11);
+          doc.setFont("helvetica","normal"); doc.setFontSize(8.2); doc.setTextColor(...TEXT); doc.text(ls.slice(0,3),margin+19,cursor+24);
+          cursor+=bh;
+        }
 
-        // Case
         if(h.scenario){
-          cursor += 8;
-          roundRect(margin+12,cursor,contentWidth-24,38,BLUE_LIGHT,BLUE_BORDER,5);
-          doc.setFont("helvetica","bold");
-          doc.setFontSize(7.5);
-          doc.setTextColor(...BLUE);
-          doc.text("CASE",margin+20,cursor+12);
-          doc.setFont("helvetica","normal");
-          doc.setFontSize(8.4);
-          doc.setTextColor(...TEXT);
-          let caseLines=doc.splitTextToSize(h.scenario,contentWidth-46);
-          doc.text(caseLines.slice(0,2),margin+20,cursor+25);
-          cursor += 46;
-        }else{
-          cursor += 7;
+          cursor+=5;
+          let bh=24+Math.min(2,caseLines.length)*10;
+          if(cursor+bh>pageHeight-50){footer();doc.addPage();y=38;cursor=y;}
+          box(margin+12,cursor,contentWidth-24,bh,BLUE_LIGHT,BLUE_BORDER,5);
+          doc.setFont("helvetica","bold");doc.setFontSize(7.2);doc.setTextColor(...BLUE);doc.text("CASE",margin+19,cursor+11);
+          doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...TEXT);doc.text(caseLines.slice(0,2),margin+19,cursor+24);
+          cursor+=bh;
         }
 
-        function answerBox(label,value,fill,stroke,labelColor){
-          let lines=doc.splitTextToSize(String(value||"Not available"),contentWidth-44);
-          let h=24+Math.min(lines.length,3)*12;
-          roundRect(margin+12,cursor,contentWidth-24,h,fill,stroke,5);
-          doc.setFont("helvetica","bold");
-          doc.setFontSize(7.5);
-          doc.setTextColor(...labelColor);
-          doc.text(label,margin+20,cursor+12);
-          doc.setFont("helvetica","normal");
-          doc.setFontSize(8.8);
-          doc.setTextColor(...TEXT);
-          doc.text(lines.slice(0,3),margin+20,cursor+26);
-          cursor+=h+6;
-        }
+        field("YOUR ANSWER",h.userAnswer||"No answer",RED_LIGHT,RED,RED);
+        field("CORRECT / MODEL ANSWER",h.correctAnswer||"Not available",GREEN_LIGHT,GREEN,GREEN);
 
-        answerBox("YOUR ANSWER",h.userAnswer||"No answer",RED_LIGHT,RED,RED);
-        answerBox("CORRECT / MODEL ANSWER",h.correctAnswer||"Not available",GREEN_LIGHT,GREEN,GREEN);
-
-        let detail="What you got wrong: "+(h.subtopic||h.topic||"Not identified");
-        if(h.sourceFile){
-          detail+="\nSource: "+h.sourceFile+" - Page "+(h.sourcePage||"Not identified");
-        }
-        if(h.sourceContent){
-          detail+="\nSource content: "+h.sourceContent;
-        }
-        if(h.explanation){
-          detail+="\nExplanation: "+h.explanation;
-        }
-
-        let detailLines=doc.splitTextToSize(detail,contentWidth-44);
-        let detailH=Math.min(120,18+detailLines.slice(0,7).length*11.5);
-        roundRect(margin+12,cursor,contentWidth-24,detailH,LIGHT,BLUE_BORDER,5);
-        doc.setFont("helvetica","normal");
-        doc.setFontSize(8.4);
-        doc.setTextColor(...MUTED);
-        doc.text(detailLines.slice(0,7),margin+20,cursor+14);
-
-        y=cursor+detailH+16;
+        cursor+=5;
+        let dl=detailLines.slice(0,7);
+        let dh=20+dl.length*10;
+        if(cursor+dh>pageHeight-50){footer();doc.addPage();y=38;cursor=y;}
+        box(margin+12,cursor,contentWidth-24,dh,LIGHT,BLUE_BORDER,5);
+        doc.setFont("helvetica","normal");doc.setFontSize(7.8);doc.setTextColor(...MUTED);doc.text(dl,margin+19,cursor+14);
+        y=cursor+dh+14;
       });
     }
 
-    // Final footer on the last page.
-    addPageNumber();
+    footer();
 
-    let safeSubject=(state.subject||"study-report")
-      .replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-
-    doc.save((safeSubject||"study-report")+"-report-card.pdf");
+    // Specific, meaningful file name: subject + date + timestamp.
+    let safeSubject=(state.subject||"study-report").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+    let fileDate=new Date().toISOString().slice(0,10);
+    let fileTime=new Date().toTimeString().slice(0,5).replace(":","-");
+    doc.save((safeSubject||"study-report")+"-report-"+fileDate+"-"+fileTime+".pdf");
   }
 
 
