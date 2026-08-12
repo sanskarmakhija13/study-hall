@@ -12,6 +12,7 @@
 // GEMINI_MODELS=gemini-2.5-flash-lite,gemini-2.5-flash
 
 let cursor = 0;
+const providerHealth = new Map();
 
 function splitKeys(name) {
   return String(process.env[name] || "")
@@ -185,6 +186,21 @@ function isRetryable(err) {
   return [400, 401, 402, 403, 404, 408, 409, 429, 500, 502, 503, 504].includes(err?.status);
 }
 
+function providerId(item) {
+  return `${item.provider}:${item.model}:${item.key.slice(-8)}`;
+}
+function isTemporarilyBlocked(item) {
+  const until = providerHealth.get(providerId(item));
+  return until && until > Date.now();
+}
+function markProvider(item, err) {
+  const id=providerId(item);
+  if([402,429].includes(err?.status)) providerHealth.set(id,Date.now()+5*60*1000);
+  else if([401,403].includes(err?.status)) providerHealth.set(id,Date.now()+30*60*1000);
+  else if([500,502,503,504].includes(err?.status)) providerHealth.set(id,Date.now()+30*1000);
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
 async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only." });
@@ -211,35 +227,31 @@ async function handler(req, res) {
     return res.status(413).json({ error: "Request is too large." });
   }
 
-  // Rotate starting point on every request. If a provider/model is exhausted,
-  // move on to the next configured option.
+  // Try healthy providers in rotation. If every provider has a transient failure,
+  // make one additional pass so users do not have to press Try again themselves.
   const start = cursor++ % pool.length;
   let lastError = null;
 
-  for (let offset = 0; offset < pool.length; offset++) {
-    const item = pool[(start + offset) % pool.length];
-
-    try {
-      let content = "";
-      if (item.provider === "cerebras") {
-        content = await callCerebras(item, system, userPrompt);
-      } else if (item.provider === "groq") {
-        content = await callGroq(item, system, userPrompt);
-      } else if (item.provider === "gemini") {
-        content = await callGemini(item, system, userPrompt);
+  for (let round=0; round<2; round++) {
+    let attempted=0;
+    for (let offset=0; offset<pool.length; offset++) {
+      const item=pool[(start+offset)%pool.length];
+      if(isTemporarilyBlocked(item)) continue;
+      attempted++;
+      try{
+        let content="";
+        if(item.provider==="cerebras") content=await callCerebras(item,system,userPrompt);
+        else if(item.provider==="groq") content=await callGroq(item,system,userPrompt);
+        else if(item.provider==="gemini") content=await callGemini(item,system,userPrompt);
+        if(!content) throw new Error(`${item.provider} returned an empty response.`);
+        return res.status(200).json({content,provider:item.provider,model:item.model});
+      }catch(err){
+        lastError=err;
+        markProvider(item,err);
+        if(!isRetryable(err)) break;
       }
-
-      if (!content) throw new Error(`${item.provider} returned an empty response.`);
-
-      return res.status(200).json({
-        content,
-        provider: item.provider,
-        model: item.model
-      });
-    } catch (err) {
-      lastError = err;
-      if (!isRetryable(err)) break;
     }
+    if(round===0 && attempted>0) await sleep(250);
   }
 
   return res.status(503).json({
