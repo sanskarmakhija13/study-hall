@@ -1050,6 +1050,177 @@
     html[data-theme="auto"] *{scrollbar-color:#30363D #0D1117;}
   }
 
+
+  /* =========================================================
+     REPORT CARD — RESPONSIVE / NO-OVERLAP LAYOUT
+     ========================================================= */
+  .report-card{
+    overflow:visible !important;
+    min-width:0 !important;
+  }
+
+  .report-head,
+  .report-header,
+  .report-title-row{
+    min-width:0 !important;
+    height:auto !important;
+    min-height:0 !important;
+  }
+
+  .report-head h2,
+  .report-card h2,
+  .report-card h3,
+  .report-card p{
+    overflow-wrap:anywhere;
+    word-break:normal;
+  }
+
+  /* Grade badge must stay in normal flow rather than colliding with the
+     timestamp/title area. */
+  .report-grade{
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    transform:none !important;
+    flex:0 0 auto !important;
+    width:72px !important;
+    min-width:72px !important;
+    height:72px !important;
+    min-height:72px !important;
+    box-sizing:border-box !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    margin:0 !important;
+  }
+
+  /* Any report header that contains subject/date + grade becomes a clean grid. */
+  .report-head{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:24px !important;
+    flex-wrap:wrap !important;
+  }
+
+  .report-head > div:first-child{
+    min-width:0 !important;
+    flex:1 1 320px !important;
+  }
+
+  .report-meta{
+    overflow-wrap:anywhere !important;
+  }
+
+  /* Report statistics should never overlap the grade/header. */
+  .report-stats,
+  .report-summary,
+  .stats-grid{
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:14px !important;
+    min-width:0 !important;
+  }
+
+  .report-stat{
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    overflow:hidden !important;
+  }
+
+  .report-stat .value{
+    overflow-wrap:anywhere !important;
+  }
+
+  /* Topic/source cards */
+  .report-section,
+  .topic-row,
+  .wrong-item{
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    overflow:visible !important;
+  }
+
+  .topic-row{
+    padding:16px !important;
+  }
+
+  .topic-name,
+  .wrong-q{
+    overflow-wrap:anywhere !important;
+  }
+
+  /* Keep source metadata inside the card. */
+  .topic-row .source,
+  .topic-row .report-source,
+  .wrong-item .source,
+  .wrong-item .report-source,
+  .report-source{
+    max-width:100% !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+  }
+
+  /* The concept coverage banner needs to grow with its text. */
+  .coverage-summary-card{
+    height:auto !important;
+    min-height:0 !important;
+    box-sizing:border-box !important;
+    overflow:visible !important;
+  }
+
+  /* Dark mode: no white "paper" islands inside the charcoal report. */
+  html[data-theme="dark"] .report-card,
+  html[data-theme="dark"] .report-head,
+  html[data-theme="dark"] .report-section,
+  html[data-theme="dark"] .topic-row,
+  html[data-theme="dark"] .wrong-item{
+    background:#161B22 !important;
+    color:#F0F6FC !important;
+  }
+
+  @media (prefers-color-scheme:dark){
+    html[data-theme="auto"] .report-card,
+    html[data-theme="auto"] .report-head,
+    html[data-theme="auto"] .report-section,
+    html[data-theme="auto"] .topic-row,
+    html[data-theme="auto"] .wrong-item{
+      background:#161B22 !important;
+      color:#F0F6FC !important;
+    }
+  }
+
+  @media (max-width:700px){
+    .report-head{
+      align-items:flex-start !important;
+      gap:14px !important;
+    }
+
+    .report-grade{
+      width:62px !important;
+      min-width:62px !important;
+      height:62px !important;
+      min-height:62px !important;
+    }
+
+    .report-stats,
+    .report-summary,
+    .stats-grid{
+      grid-template-columns:1fr !important;
+    }
+  }
+
+  @media (max-width:480px){
+    .report-head{
+      display:block !important;
+    }
+
+    .report-grade{
+      margin-top:12px !important;
+    }
+  }
+
 </style>
 </head>
 <body>
