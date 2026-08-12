@@ -9,21 +9,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#ECE6D6;
-    --paper-raised:#F5F0E4;
-    --ink:#26261F;
-    --pencil:#5B5A4E;
-    --pencil-faint:#8C8A7B;
-    --red-pen:#A6392D;
-    --red-pen-dim:#C97367;
-    --green-check:#3F6B4A;
-    --folder:#C9A66B;
-    --folder-dark:#A9803F;
-    --rule-blue:#7C93AC;
-    --card-border: rgba(38,38,31,0.14);
-    --shadow: 0 1px 0 rgba(38,38,31,0.06);
-    --radius: 3px;
-  }
+    --paper:#FFFFFF;
+    --paper-raised:#FFFFFF;
+    --ink:#123B5D;
+    --pencil:#5E7890;
+    --pencil-faint:#A8BBCB;
+    --card-border:#C9DCEC;
+    --red-pen:#C83E4D;
+    --red-wash:#FDECEF;
+    --green-check:#1F7A5A;
+    --green-wash:#E8F6EF;
+    --rule-blue:#2F6FA3;
+    --shadow:0 2px 10px rgba(18,59,93,.08);
+}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -69,7 +67,7 @@
   }
 
   .panel{
-    background:var(--paper-raised);
+    background:#FFFFFF;
     border:1px solid var(--card-border);
     border-radius:0 6px 6px 6px;
     padding:20px;
@@ -100,7 +98,7 @@
     line-height:28px;
     resize:vertical;
   }
-  input[type="text"], input[type="password"]{ line-height:normal; padding:9px 12px; background:var(--paper-raised); font-family:'IBM Plex Mono', monospace; font-size:13px; }
+  input[type="text"], input[type="password"]{ line-height:normal; padding:9px 12px; background:#FFFFFF; font-family:'IBM Plex Mono', monospace; font-size:13px; }
   textarea:focus, input[type="text"]:focus, input[type="password"]:focus, select:focus{
     outline:none;
     border-color:var(--rule-blue);
@@ -111,17 +109,17 @@
   .file-btn{
     display:inline-flex; align-items:center; gap:8px;
     font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.4px;
-    background:var(--paper); border:1px solid var(--ink); border-radius:var(--radius);
+    background:#FFFFFF; border:1px solid var(--ink); border-radius:var(--radius);
     padding:8px 14px; cursor:pointer; user-select:none;
   }
-  .file-btn:hover{ background:#E2DBC7; }
+  .file-btn:hover{ background:#E9F2F9; }
   input[type="file"]{ display:none; }
   .file-status{ font-size:12px; color:var(--pencil); font-family:'IBM Plex Mono', monospace; line-height:1.5; }
 
   .file-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
   .chip{
     display:flex; align-items:center; gap:8px;
-    background:var(--paper); border:1px solid var(--card-border); border-radius:20px;
+    background:#FFFFFF; border:1px solid var(--card-border); border-radius:20px;
     padding:5px 6px 5px 10px; font-family:'IBM Plex Mono', monospace; font-size:11.5px;
   }
   .chip img{ width:22px; height:22px; object-fit:cover; border-radius:4px; }
@@ -138,13 +136,13 @@
   .choice-pill{
     font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.3px;
     padding:8px 13px; border:1px solid var(--card-border); border-radius:20px;
-    background:var(--paper); cursor:pointer; color:var(--pencil); transition:border-color .15s;
+    background:#FFFFFF; cursor:pointer; color:var(--pencil); transition:border-color .15s;
   }
-  .choice-pill.active{ border-color:var(--ink); color:var(--ink); background:#DED5B8; font-weight:600; }
+  .choice-pill.active{ border-color:var(--ink); color:var(--ink); background:#DCECF8; font-weight:600; }
 
   select{
     width:100%; font-family:'IBM Plex Mono', monospace; font-size:13px; padding:9px 10px;
-    border:1px solid var(--card-border); border-radius:var(--radius); background:var(--paper-raised); color:var(--ink);
+    border:1px solid var(--card-border); border-radius:var(--radius); background:#FFFFFF; color:var(--ink);
   }
 
   .btn{
@@ -169,7 +167,7 @@
   .key-list{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
   .key-chip{
     display:flex; align-items:center; justify-content:space-between;
-    background:var(--paper); border:1px solid var(--card-border); border-radius:var(--radius);
+    background:#FFFFFF; border:1px solid var(--card-border); border-radius:var(--radius);
     padding:7px 10px; font-family:'IBM Plex Mono', monospace; font-size:12.5px;
   }
   .key-chip .kc-remove{
@@ -190,7 +188,7 @@
   .scantron .bubble.incorrect{ background:var(--red-pen); border-color:var(--red-pen); }
 
   .question-card{
-    position:relative; background:var(--paper-raised); border:1px solid var(--card-border);
+    position:relative; background:#FFFFFF; border:1px solid var(--card-border);
     border-radius:6px; padding:26px 24px; min-height:180px; box-shadow:var(--shadow); overflow:hidden;
   }
   .q-meta{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
@@ -203,7 +201,7 @@
   .options{ display:flex; flex-direction:column; gap:10px; }
   .option{
     text-align:left; display:flex; gap:12px; align-items:flex-start; padding:12px 14px;
-    border:1px solid var(--card-border); border-radius:var(--radius); background:var(--paper);
+    border:1px solid var(--card-border); border-radius:var(--radius); background:#FFFFFF;
     cursor:pointer; font-family:'Source Serif 4', Georgia, serif; font-size:15.5px; color:var(--ink);
     transition:border-color .12s, background .12s;
   }
@@ -225,13 +223,13 @@
     border:2px solid var(--green-check) !important;
     background:var(--green-wash) !important;
     color:var(--ink) !important;
-    box-shadow:0 0 0 2px rgba(63,107,74,.22);
+    box-shadow:0 0 0 2px rgba(31,122,90,.22);
   }
   .option.chosen-correct{
     border:2px solid var(--green-check) !important;
     background:var(--green-wash) !important;
     color:var(--ink) !important;
-    box-shadow:0 0 0 2px rgba(63,107,74,.22);
+    box-shadow:0 0 0 2px rgba(31,122,90,.22);
   }
   .option.chosen-wrong{
     border:2px solid var(--red-pen) !important;
@@ -339,7 +337,7 @@
 
   .quiz-footer{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; flex-wrap:wrap; gap:10px; }
 
-  .results-card{ text-align:center; padding:40px 24px; background:var(--paper-raised); border:1px solid var(--card-border); border-radius:6px; }
+  .results-card{ text-align:center; padding:40px 24px; background:#FFFFFF; border:1px solid var(--card-border); border-radius:6px; }
   .grade-stamp{
     display:inline-block; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:52px;
     color:var(--red-pen); border:5px solid var(--red-pen); border-radius:10px; padding:6px 26px;
@@ -349,7 +347,7 @@
   .breakdown{ text-align:left; max-width:520px; margin:0 auto 26px; display:flex; flex-direction:column; gap:8px; }
   .breakdown-row{
     display:flex; gap:10px; align-items:flex-start; font-size:14px; padding:8px 10px;
-    border-radius:var(--radius); background:var(--paper); border:1px solid var(--card-border);
+    border-radius:var(--radius); background:#FFFFFF; border:1px solid var(--card-border);
   }
   .breakdown-row .mark{ font-family:'IBM Plex Mono', monospace; font-weight:700; flex-shrink:0; }
   .breakdown-row.correct .mark{ color:var(--green-check); }
@@ -357,7 +355,7 @@
 
 
   .report-card{
-    background:var(--paper-raised); border:1px solid var(--card-border);
+    background:#FFFFFF; border:1px solid var(--card-border);
     border-radius:6px; padding:28px 24px; box-shadow:var(--shadow);
   }
   .report-head{
@@ -377,7 +375,7 @@
   }
   @media(max-width:560px){ .report-stat-grid{grid-template-columns:1fr;} }
   .report-stat{
-    padding:13px 14px; background:var(--paper); border:1px solid var(--card-border);
+    padding:13px 14px; background:#FFFFFF; border:1px solid var(--card-border);
     border-radius:var(--radius);
   }
   .report-stat .label{
@@ -398,7 +396,7 @@
   .topic-page{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--pencil); }
   .topic-advice{ grid-column:1/-1; font-size:13px; color:var(--pencil); line-height:1.45; }
   .wrong-item{
-    padding:16px; margin-bottom:10px; background:var(--paper);
+    padding:16px; margin-bottom:10px; background:#FFFFFF;
     border:1px solid var(--card-border); border-radius:var(--radius);
   }
   .wrong-item .wrong-q{
@@ -420,6 +418,55 @@
     text-align:center; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--pencil-faint);
     margin-top:36px; line-height:1.8;
   }
+
+  .coverage-panel{
+    margin:0 0 18px;padding:14px 16px;background:#FFFFFF;
+    border:1px solid var(--card-border);border-radius:6px;
+  }
+  .coverage-topline{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .coverage-kicker{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.1px;color:var(--pencil);margin-bottom:3px}
+  .coverage-topline strong{font-size:15px}
+  .coverage-mode{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 8px;border:1px solid var(--rule-blue);border-radius:999px;color:var(--rule-blue);white-space:nowrap}
+  .coverage-mode.complete{border-color:var(--green-check);color:var(--green-check);background:rgba(31,122,90,.08)}
+  .coverage-bar{margin-top:10px;height:7px;background:#DCE6EF;border-radius:999px;overflow:hidden}
+  .coverage-fill{height:100%;width:0;background:var(--green-check);transition:width .25s ease}
+  .coverage-note{margin-top:7px;font-size:12px;color:var(--pencil);line-height:1.4}
+  .coverage-toggle{margin-top:8px;padding:0;border:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink);text-decoration:underline;cursor:pointer}
+  .coverage-map{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px;max-height:260px;overflow:auto}
+  .coverage-item{display:flex;align-items:flex-start;gap:8px;padding:8px 9px;border:1px solid var(--card-border);background:#FFFFFF;border-radius:4px;font-size:11px;color:var(--pencil)}
+  .coverage-item.covered{border-color:rgba(31,122,90,.30);background:rgba(31,122,90,.06);color:var(--ink)}
+  .coverage-dot{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--pencil-faint)}
+  .coverage-item.covered .coverage-dot{color:var(--green-check)}
+  .coverage-item small{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--pencil-faint)}
+  .file-btn{background:#155B8A!important;color:#fff!important;border-color:#155B8A!important;font-weight:600}
+  .file-btn:hover{opacity:.9;background:var(--ink)!important}
+  .report-card{background:#FFFFFF;border:1px solid var(--card-border);border-radius:10px;padding:30px;box-shadow:0 2px 12px rgba(20,50,74,.08)}
+  .report-stat{border:1px solid var(--card-border);box-shadow:0 1px 3px rgba(20,50,74,.05)}
+  .report-grade{font-size:34px;min-width:62px;text-align:center;border:3px solid var(--green-check);color:var(--green-check);background:rgba(31,122,90,.08)}
+  .topic-row{margin-bottom:10px;padding:15px 16px;border:1px solid var(--card-border);border-left:4px solid var(--red-pen);border-radius:6px;background:#FFFFFF;box-shadow:0 1px 3px rgba(20,50,74,.04)}
+  .topic-name{font-size:16px}
+  .wrong-item{margin-bottom:14px;padding:18px;border:1px solid var(--card-border);border-left:5px solid var(--red-pen);border-radius:7px;background:var(--paper)}
+  .wrong-item .wrong-q{font-size:16px}
+  .wrong-answer,.correct-answer{padding:8px 10px;margin-top:7px;border-radius:4px;background:var(--paper-raised)}
+  .wrong-answer{border-left:3px solid var(--red-pen)}
+  .correct-answer{border-left:3px solid var(--green-check)}
+  .wrong-label{font-weight:700;color:var(--pencil)}
+  .coverage-summary-card{padding:12px 14px;margin-bottom:12px;background:rgba(31,122,90,.07);border:1px solid rgba(31,122,90,.22);border-radius:6px;font-size:13px}
+  .coverage-summary-card strong{color:var(--green-check)}
+  @media(max-width:700px){
+    .wrap{padding:18px 12px 40px}.masthead{margin-bottom:16px}.masthead h1{font-size:22px}
+    .panel{padding:16px;margin-bottom:16px}.settings-grid{grid-template-columns:1fr;gap:13px}
+    .btn{width:100%}.btn-row{flex-direction:column}.quiz-header{align-items:flex-start}
+    .question-card{padding:20px 16px}.q-text{font-size:17px;line-height:1.45}
+    .option{padding:11px 10px;font-size:15px;gap:9px}.option .answer-state{font-size:8px;margin-left:6px}
+    .coverage-map{grid-template-columns:1fr}.report-card{padding:20px 14px}.report-head h2{font-size:24px}
+    .report-grade{font-size:28px}.report-stat-grid{grid-template-columns:1fr}.report-actions .btn{width:100%}
+  }
+  @media(max-width:430px){
+    .choice-group{display:grid;grid-template-columns:1fr 1fr}.choice-pill{width:100%;text-align:center}
+    .option{font-size:14px}.option .letter{flex-basis:26px;min-width:26px;width:26px}.coverage-panel{padding:12px}
+  }
+
   @media print{
     body{ background:#fff; }
     .wrap{ max-width:none; padding:0; }
@@ -435,6 +482,46 @@
     background:var(--green-check) !important;
     color:#fff !important;
   }
+
+  input:focus, textarea:focus, select:focus{
+    outline:none;
+    border-color:#2F6FA3 !important;
+    box-shadow:0 0 0 3px rgba(47,111,163,.14);
+  }
+  .choice-pill.active{
+    border-color:#2F6FA3;
+    color:#14324A;
+    background:#DCECF8;
+  }
+  .q-badge{
+    color:#2F6FA3;
+    border-color:#B7CCDD;
+    background:#F7FBFE;
+  }
+
+
+  body{background:#F4F8FC !important;color:#123B5D !important;}
+  .panel,.question-card,.report-card,.report-stat,.wrong-item,.topic-row,.option,
+  .coverage-panel,.coverage-item,.caselet,.report-head,.report-section{
+    background:#FFFFFF !important;
+  }
+  .choice-pill{background:#FFFFFF !important;color:#5E7890 !important;border-color:#C9DCEC !important;}
+  .choice-pill.active{background:#DDECF7 !important;color:#123B5D !important;border-color:#2F6FA3 !important;}
+  select,input,textarea{background:#FFFFFF !important;color:#123B5D !important;border-color:#C9DCEC !important;}
+  .btn{background:#155B8A !important;color:#FFFFFF !important;border-color:#155B8A !important;}
+  .btn.secondary{background:#FFFFFF !important;color:#123B5D !important;border-color:#9FBBD0 !important;}
+  .btn.secondary:hover{background:#EAF3FA !important;}
+  .file-btn{background:#155B8A !important;color:#FFFFFF !important;border-color:#155B8A !important;}
+  .masthead .tag{background:#DDECF7 !important;color:#2F6FA3 !important;border-color:#B8D0E3 !important;}
+  .folder-tab{background:#2F6FA3 !important;color:#FFFFFF !important;}
+  .coverage-bar{background:#DCE8F1 !important;}
+  .coverage-fill{background:#2F6FA3 !important;}
+  .coverage-summary-card{background:#EDF6FB !important;border-color:#B8D0E3 !important;}
+  .report-grade{background:#E8F6EF !important;}
+  .report-stat .value,.topic-name{color:#123B5D !important;}
+  .report-section h3{color:#2F6FA3 !important;}
+  .option:hover:not(:disabled){border-color:#2F6FA3 !important;background:#F4FAFE !important;}
+
 </style>
 </head>
 <body>
@@ -447,20 +534,6 @@
 
   <!-- ============ SETUP SCREEN ============ -->
   <div id="screen-setup">
-
-    <span class="folder-tab">AI engine</span>
-    <div class="panel">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span class="q-badge">AI ENGINE</span>
-        <strong style="font-family:'Source Serif 4',Georgia,serif;">Study Hall AI Pool</strong>
-      </div>
-      <div class="provider-status" style="margin-top:10px;">
-        Connected. The app automatically uses the available AI providers configured by the site owner and switches providers when one reaches a limit.
-      </div>
-      <div class="file-status" style="margin-top:10px;">
-        You don't need an API key. Your study material stays in the browser; only the small source section needed for each question is sent to the AI engine.
-      </div>
-    </div>
 
     <span class="folder-tab">Source material</span>
     <div class="panel">
@@ -525,6 +598,19 @@
       <span class="quiz-subject" id="quizSubjectLabel"></span>
       <span class="score-readout"><span id="scoreCorrect">0</span> / <span id="scoreTotal">0</span> correct</span>
     </div>
+    <div class="coverage-panel" id="coveragePanel">
+      <div class="coverage-topline">
+        <div>
+          <span class="coverage-kicker">First-pass coverage</span>
+          <strong id="coverageLabel">0 / 0 sections</strong>
+        </div>
+        <span class="coverage-mode" id="coverageMode">Covering new material</span>
+      </div>
+      <div class="coverage-bar"><div class="coverage-fill" id="coverageFill"></div></div>
+      <div class="coverage-note" id="coverageNote">The quiz is prioritizing important concepts in sections you have not yet covered.</div>
+      <button class="coverage-toggle" id="coverageToggle" type="button">Show coverage map</button>
+      <div class="coverage-map hidden" id="coverageMap"></div>
+    </div>
     <div class="scantron" id="scantron"></div>
 
     <div class="question-card" id="questionCard"></div>
@@ -554,6 +640,7 @@
 
       <div class="report-section">
         <h3>Topics to study</h3>
+        <div class="coverage-summary-card" id="reportCoverageSummary"></div>
         <div id="reportTopics"></div>
       </div>
 
@@ -592,6 +679,9 @@
     sourceChunks: [],
     sourceCursor: 0,
     coveredSourceIds: [],
+    concepts: {},
+    conceptOrder: [],
+    questionNumber: 0,
     images: [],
     subject: "",
     qType: "mixed",
@@ -632,6 +722,12 @@
   const questionCard = document.getElementById("questionCard");
   const endQuizBtn = document.getElementById("endQuizBtn");
   const nextBtn = document.getElementById("nextBtn");
+  const coverageLabel = document.getElementById("coverageLabel");
+  const coverageMode = document.getElementById("coverageMode");
+  const coverageFill = document.getElementById("coverageFill");
+  const coverageNote = document.getElementById("coverageNote");
+  const coverageToggle = document.getElementById("coverageToggle");
+  const coverageMap = document.getElementById("coverageMap");
 
   const reportSubject = document.getElementById("reportSubject");
   const reportGrade = document.getElementById("reportGrade");
@@ -639,6 +735,7 @@
   const reportCorrect = document.getElementById("reportCorrect");
   const reportWrong = document.getElementById("reportWrong");
   const reportTopics = document.getElementById("reportTopics");
+  const reportCoverageSummary = document.getElementById("reportCoverageSummary");
   const reportWrongQuestions = document.getElementById("reportWrongQuestions");
   const downloadReportBtn = document.getElementById("downloadReportBtn");
   const retakeBtn = document.getElementById("retakeBtn");
@@ -876,7 +973,9 @@
             id:state.sourceChunks.length,
             file:markers[i].file,
             page:markers[i].page + (content.length>maxChars ? " (part "+(Math.floor(pos/maxChars)+1)+")" : ""),
-            content:content.slice(pos,pos+maxChars)
+            content:content.slice(pos,pos+maxChars),
+            conceptsKnown:false,
+            conceptIds:[]
           });
         }
       }
@@ -887,7 +986,9 @@
           id:state.sourceChunks.length,
           file:state.sourceFiles.length===1 ? state.sourceFiles[0] : "Pasted notes",
           page:"Not identified",
-          content:raw.slice(pos,pos+maxChars)
+          content:raw.slice(pos,pos+maxChars),
+          conceptsKnown:false,
+          conceptIds:[]
         });
       }
     }
@@ -904,57 +1005,140 @@
       .filter(w=>!["question","answer","source","topic","strategic","alliance","alliances"].includes(w)));
   }
 
-  function selectSourceChunks(focus){
-    if (!state.sourceChunks.length) return [];
-
-    const recent = state.history.slice(-5);
-    const recentPages = new Set(
-      recent.map(h => (h.sourceFile || "") + "||" + (h.sourcePage || ""))
-    );
-
-    // FIRST PASS: cover every source section before deliberately revisiting.
-    // The model is told to prioritize the most important/exam-worthy concept
-    // within the selected section. Once all sections have been touched, the
-    // system switches to reinforcement of important concepts.
-    const covered = new Set(state.coveredSourceIds || []);
-    const uncovered = state.sourceChunks.filter(c => !covered.has(c.id));
-    const pool = uncovered.length ? uncovered : state.sourceChunks;
-
-    let best = null;
-    let bestScore = -Infinity;
-    const n = pool.length;
-
-    for (let offset = 0; offset < n; offset++) {
-      const c = pool[offset];
-      const globalIdx = state.sourceChunks.findIndex(x => x.id === c.id);
-
-      let score = -Math.abs(globalIdx - state.sourceCursor) * 0.12;
-
-      // Avoid immediately repeating a page once we enter reinforcement mode.
-      if (!uncovered.length && recentPages.has(c.file + "||" + c.page)) score -= 5;
-
-      if (score > bestScore) {
-        bestScore = score;
-        best = { idx: globalIdx, c };
-      }
-    }
-
-    const selected = [best.c];
-    state.sourceCursor = (best.idx + 1) % state.sourceChunks.length;
-
-    if (focus === "application" && state.sourceChunks.length > 1) {
-      const next = state.sourceChunks[state.sourceCursor];
-      // During coverage, adjacent context is useful, but don't accidentally
-      // mark it covered just because it was supplied as context.
-      if (next && next.file === best.c.file && next.id !== best.c.id) {
-        selected.push(next);
-      }
-    }
-
-    return selected;
+  function ensureConceptRegistry(){
+    state.concepts = state.concepts && typeof state.concepts === "object" ? state.concepts : {};
+    state.conceptOrder = Array.isArray(state.conceptOrder) ? state.conceptOrder : [];
   }
 
-  function formatSelectedSource(chunks){
+  function conceptKey(chunkId, name){
+    return String(chunkId) + "::" + String(name || "").trim().toLowerCase();
+  }
+
+  function getConceptsForChunk(chunkId){
+    ensureConceptRegistry();
+    const chunk=state.sourceChunks.find(c=>c.id===chunkId);
+    if(!chunk) return [];
+    return (chunk.conceptIds||[]).map(id=>state.concepts[id]).filter(Boolean);
+  }
+
+  function addConceptInventory(chunkId, inventory){
+    ensureConceptRegistry();
+    const chunk=state.sourceChunks.find(c=>c.id===chunkId);
+    if(!chunk || !Array.isArray(inventory)) return;
+
+    inventory.slice(0,6).forEach((raw, idx)=>{
+      const name=String(raw?.name || raw?.concept || "").trim();
+      if(!name) return;
+
+      const id=conceptKey(chunkId,name);
+      if(!state.concepts[id]){
+        state.concepts[id]={
+          id,
+          chunkId,
+          name,
+          importance:Math.max(1,Math.min(3,Number(raw?.importance)||3)),
+          attempts:0,
+          correct:0,
+          partial:0,
+          incorrect:0,
+          lastQuestion:0,
+          lastType:"",
+          lastOutcome:""
+        };
+        state.conceptOrder.push(id);
+        if(!chunk.conceptIds) chunk.conceptIds=[];
+        chunk.conceptIds.push(id);
+      }else{
+        state.concepts[id].importance=Math.max(
+          state.concepts[id].importance,
+          Math.max(1,Math.min(3,Number(raw?.importance)||1))
+        );
+      }
+    });
+
+    chunk.conceptsKnown=true;
+  }
+
+  function conceptPriority(c){
+    if(!c) return -Infinity;
+    const age=Math.max(0, state.questionNumber-(c.lastQuestion||0));
+    const wrongBoost=c.incorrect*5 + c.partial*2.5;
+    const unseenBoost=c.attempts===0 ? 25 : 0;
+    const importanceBoost=c.importance*4;
+    const spacingBoost=Math.min(5,age*0.35);
+    return unseenBoost + wrongBoost + importanceBoost + spacingBoost - c.attempts*0.8;
+  }
+
+  function chooseBestConcept(candidates, avoidId){
+    const list=(candidates||[]).filter(c=>c && c.id!==avoidId);
+    if(!list.length) return null;
+    return [...list].sort((a,b)=>conceptPriority(b)-conceptPriority(a))[0];
+  }
+
+  function chooseQuestionTarget(focus){
+    ensureConceptRegistry();
+
+    const undiscovered=state.sourceChunks.filter(c=>!c.conceptsKnown);
+
+    // Phase 1: discover each source section once, then build its compact
+    // concept inventory as part of the same question call. No extra API call.
+    if(undiscovered.length){
+      const idx=undiscovered.reduce((best,c)=>{
+        if(best===null) return c.id;
+        const d1=Math.abs(c.id-state.sourceCursor);
+        const d2=Math.abs(best.id-state.sourceCursor);
+        return d1<d2 ? c.id : best.id;
+      },null);
+      const primary=state.sourceChunks.find(c=>c.id===idx) || undiscovered[0];
+      return {
+        primary,
+        selected:[primary],
+        target:null,
+        phase:"DISCOVERY"
+      };
+    }
+
+    // Phase 2/3: all source sections have compact concept inventories.
+    // Cover each important concept exactly once before reinforcement.
+    const uncovered=state.conceptOrder
+      .map(id=>state.concepts[id])
+      .filter(c=>c && c.attempts===0);
+
+    if(uncovered.length){
+      const target=chooseBestConcept(uncovered,state.lastConceptId) || uncovered[0];
+      const primary=state.sourceChunks.find(c=>c.id===target.chunkId);
+      return {
+        primary,
+        selected:focus==="application" ? selectAdjacent(primary) : [primary],
+        target,
+        phase:"CONCEPT_COVERAGE"
+      };
+    }
+
+    // Phase 3: reinforcement. Weak concepts get much higher priority than
+    // concepts already answered correctly.
+    const all=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
+    const target=chooseBestConcept(all,state.lastConceptId) || chooseBestConcept(all,null);
+    const primary=state.sourceChunks.find(c=>c.id===target.chunkId);
+    return {
+      primary,
+      selected:focus==="application" ? selectAdjacent(primary) : [primary],
+      target,
+      phase:"REINFORCEMENT"
+    };
+  }
+
+  function selectAdjacent(primary){
+    if(!primary || state.sourceChunks.length<2) return primary?[primary]:[];
+    const next=state.sourceChunks[(primary.id+1)%state.sourceChunks.length];
+    return next && next.file===primary.file && next.id!==primary.id ? [primary,next] : [primary];
+  }
+
+  function selectSourceChunks(focus){
+    return chooseQuestionTarget(focus).selected;
+  }
+
+function formatSelectedSource(chunks){
     return chunks.map((c,i)=>
       "[SOURCE SECTION "+(i+1)+"]\nFILE: "+c.file+"\nPAGE/SLIDE: "+c.page+
       "\nCONTENT:\n"+c.content
@@ -1032,68 +1216,100 @@
   async function generateQuestion(){
     const type=pickType();
     const focus=pickFocus();
-    const applicationStyle = focus === "application" ? pickApplicationStyle() : "none";
-    const avoidList=state.askedTexts.slice(-4).map(q => String(q).slice(0, 140));
+    const applicationStyle=focus==="application" ? pickApplicationStyle() : "none";
+    const avoidList=state.askedTexts.slice(-4).map(q=>String(q).slice(0,140));
     state.askedConcepts=Array.isArray(state.askedConcepts)?state.askedConcepts:[];
 
     const recentConcepts=state.history.slice(-5).map(h=>
       "- "+(h.topic||"unknown")+" | "+(h.subtopic||"unknown")+
-      " | "+(h.sourceFile||"unknown")+" — Page "+(h.sourcePage||"unknown")
+      " | "+(h.sourceFile||"unknown")+" — Page "+(h.sourcePage||"unknown")+
+      " | outcome="+(h.verdict||"unknown")
     );
 
-    const selected=selectSourceChunks(focus);
+    const plan=chooseQuestionTarget(focus);
+    const selected=plan.selected;
+    const primary=plan.primary;
     if(!selected.length) throw new Error("No source sections were indexed. Re-upload or paste your study material.");
 
     const sourceForQuestion=formatSelectedSource(selected);
+    const primaryConcepts=getConceptsForChunk(primary.id);
+    const knownConcepts=primaryConcepts.map(c=>c.name).join(", ");
 
-    const coveragePhase = (state.coveredSourceIds || []).length < state.sourceChunks.length;
     const system=
       "You write one quiz question strictly from the SOURCE SECTIONS provided. "+
       "Do not use outside knowledge. Respond with ONLY valid JSON. "+
       "Use the exact FILE and PAGE/SLIDE metadata from the source section that supports the question. Never guess a page. "+
-      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row. "+
-      (coveragePhase
-        ? "COVERAGE PHASE: prioritize the most important, exam-worthy concept in this source section that has not yet been tested. Do not waste the first-pass question on a minor detail if the section contains a more central concept. "
-        : "REINFORCEMENT PHASE: all source sections have been touched once, so now prioritize important/high-yield concepts that deserve additional testing, especially concepts previously answered incorrectly. ");
+      "The quiz has a strict coverage policy: first discover important concepts in each source section, then test every important concept once, then reinforce weak concepts. "+
+      "Do not spend reinforcement questions on a concept that the learner already knows well when another important concept is weak. "+
+      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row.";
+
+    if(plan.phase==="DISCOVERY"){
+      system+=" This is a DISCOVERY call for a new source section. In addition to the question, return a compact inventory of the 3-6 most important/exam-worthy concepts from this section. Do not list trivial details.";
+    }else if(plan.phase==="CONCEPT_COVERAGE"){
+      system+=" This is the CONCEPT COVERAGE phase. The target concept below has not yet been tested; test that concept specifically.";
+    }else{
+      system+=" This is the REINFORCEMENT phase. The target concept below should be chosen because of importance, previous errors/partial answers, or sufficient spacing since it was last tested.";
+    }
 
     let schema;
     if(type==="mcq"){
-      schema='Return JSON: {"type":"mcq","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application case-style only: 2-4 sentence mini-case; for direct application, empty string; otherwise empty string","question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"one short sentence"}. Exactly 4 options, one correct. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
+      schema='Return JSON: {"type":"mcq","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","conceptName":"exact concept tested","conceptImportance":3,"sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application case-style only: 2-4 sentence mini-case; for direct application, empty string; otherwise empty string","conceptInventory":[{"name":"important concept","importance":3}],"question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"one short sentence"}. conceptInventory is required only when this is a DISCOVERY call; otherwise return []. Exactly 4 options, one correct.';
     }else{
-      schema='Return JSON: {"type":"subjective","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application case-style only: 2-4 sentence mini-case; for direct application, empty string; otherwise empty string","question":"...","idealAnswer":"1-3 sentence model answer","explanation":"one short sentence"}. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
+      schema='Return JSON: {"type":"subjective","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","conceptName":"exact concept tested","conceptImportance":3,"sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application case-style only: 2-4 sentence mini-case; for direct application, empty string; otherwise empty string","conceptInventory":[{"name":"important concept","importance":3}],"question":"...","idealAnswer":"1-3 sentence model answer","explanation":"one short sentence"}. conceptInventory is required only when this is a DISCOVERY call; otherwise return [].';
+    }
+
+    let targetInstruction="";
+    if(plan.target){
+      targetInstruction=
+        "\nTARGET CONCEPT TO TEST: "+plan.target.name+
+        "\nImportance: "+plan.target.importance+"/3"+
+        "\nPrevious attempts: "+plan.target.attempts+
+        "\nPrevious incorrect: "+plan.target.incorrect+
+        "\nPrevious partial: "+plan.target.partial+
+        "\nKnown concepts in this source section: "+(knownConcepts||"none");
+    }else{
+      targetInstruction=
+        "\nNEW SOURCE SECTION: identify the most important concept worth testing first. "+
+        "Also return 3-6 important concepts in conceptInventory for later coverage.";
     }
 
     const focusInstruction=focus==="fact"
       ? "FACT MODE: test recall of a specific fact, term, detail, or relationship in the source."
-      : (applicationStyle === "case"
-        ? "APPLICATION MODE — CASE: create a short 2-4 sentence mini-case involving realistic entities, decisions, actions, or outcomes, then ask the student to apply the source concept. For example, if the source covers alliance governance, describe firms creating a joint steering committee and functional committees, then ask which governance mechanism is illustrated. Do not merely reword a fact from the notes."
-        : "APPLICATION MODE — DIRECT: do NOT create a caselet. Ask the student to apply, diagnose, compare, choose, or predict using a concept from the source. The question should require reasoning beyond repeating a definition. For example, ask which governance mechanism would be most appropriate given a stated alliance-management need, or what consequence follows from a stated strategic choice.");
+      : (applicationStyle==="case"
+        ? "APPLICATION MODE — CASE: create a short 2-4 sentence mini-case, then ask the student to apply the target concept. This should be a realistic transfer problem, not a definition question."
+        : "APPLICATION MODE — DIRECT: do NOT create a caselet. Ask the student to apply, diagnose, compare, choose, or predict using the target concept. Require reasoning beyond repeating a definition.");
 
     const diversity=
-      (avoidList.length ? "Do not repeat or closely resemble:\n- "+avoidList.join("\n- ")+"\n":"")+
-      (recentConcepts.length ? "\nRECENT CONCEPTS — avoid these:\n"+recentConcepts.join("\n")+"\n":"")+
-      "\nChoose a genuinely different subtopic and angle. For application questions, alternate between CASE and DIRECT application where possible, and vary the reasoning angle. Do not make every application question a case study.";
+      (avoidList.length?"Do not repeat or closely resemble:\n- "+avoidList.join("\n- ")+"\n":"")+
+      (recentConcepts.length?"\nRECENT CONCEPTS — avoid these exact concepts/angles:\n"+recentConcepts.join("\n")+"\n":"")+
+      "\nFor application questions, alternate CASE and DIRECT styles where possible. Do not make every application question a case study.";
 
     const prompt=
       "SUBJECT: "+(state.subject||"not specified")+"\n"+
       "DIFFICULTY: "+state.difficulty+"\n"+
-      focusInstruction+"\n"+diversity+
+      "PHASE: "+plan.phase+"\n"+
+      focusInstruction+targetInstruction+"\n"+diversity+
       "\n\nSOURCE SECTIONS:\n"+sourceForQuestion+"\n\n"+schema;
 
     let last=null;
     for(let attempt=0;attempt<3;attempt++){
-      const retry=attempt===0 ? "" :
-        "\nThe previous candidate was too similar. Generate a COMPLETELY DIFFERENT concept/angle using only these source sections.";
+      const retry=attempt===0?"":"\nThe previous candidate was too similar. Keep the same target concept but use a meaningfully different question angle.";
       const parsed=parseJsonLoose(await callAI(system,prompt+retry,false));
       if(!parsed.question) throw new Error("Malformed question");
+
       parsed.topic=parsed.topic||"Topic not identified";
-      parsed.subtopic=parsed.subtopic||parsed.topic||"Specific subtopic not identified";
-      parsed.sourceFile=parsed.sourceFile||selected[0].file;
-      parsed.sourcePage=parsed.sourcePage||selected[0].page;
+      parsed.subtopic=parsed.subtopic||parsed.conceptName||parsed.topic||"Specific subtopic not identified";
+      parsed.conceptName=parsed.conceptName||parsed.subtopic;
+      parsed.sourceFile=parsed.sourceFile||primary.file;
+      parsed.sourcePage=parsed.sourcePage||primary.page;
       parsed.sourceContent=parsed.sourceContent||parsed.subtopic||"Source content not identified";
       parsed.scenario=parsed.scenario||"";
-      parsed._sourceChunkIds = selected.map(c => c.id);
+      parsed.conceptInventory=Array.isArray(parsed.conceptInventory)?parsed.conceptInventory:[];
+      parsed._sourceChunkIds=selected.map(c=>c.id);
+      parsed._primaryChunkId=primary.id;
+      parsed._phase=plan.phase;
       last=parsed;
+
       if(!isTooSimilarToRecent(parsed)) return parsed;
     }
     return last;
@@ -1135,14 +1351,69 @@
     state.askedTexts = [];
     state.askedConcepts = [];
     state.coveredSourceIds = [];
+    state.sourceCursor = 0;
+    state.concepts = {};
+    state.conceptOrder = [];
+    state.questionNumber = 0;
+    state.lastConceptId = null;
     state.score = { correct: 0, total: 0 };
     buildSourceIndex();
+    updateCoverageUI();
 
     quizSubjectLabel.textContent = state.subject || "your material";
     updateScoreUI();
     scantron.innerHTML = "";
     showScreen("quiz");
     await loadNextQuestion();
+  });
+
+  function updateCoverageUI(){
+    const chunks=state.sourceChunks.length||0;
+    const discovered=(state.coveredSourceIds||[]).length;
+    const allConcepts=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
+    const totalConcepts=allConcepts.length;
+    const coveredConcepts=allConcepts.filter(c=>c.attempts>0).length;
+    const allDiscovered=chunks>0 && discovered>=chunks;
+    const allCovered=totalConcepts>0 && coveredConcepts>=totalConcepts;
+
+    if(!allDiscovered){
+      const pct=chunks?Math.round((discovered/chunks)*100):0;
+      coverageLabel.textContent=discovered+" / "+chunks+" source sections";
+      coverageFill.style.width=pct+"%";
+      coverageMode.textContent="Building concept map";
+      coverageMode.className="coverage-mode";
+      coverageNote.textContent="Discovering important concepts across the source first. No separate indexing call is being used.";
+    }else if(!allCovered){
+      const pct=totalConcepts?Math.round((coveredConcepts/totalConcepts)*100):0;
+      coverageLabel.textContent=coveredConcepts+" / "+totalConcepts+" important concepts";
+      coverageFill.style.width=pct+"%";
+      coverageMode.textContent="Concept coverage";
+      coverageMode.className="coverage-mode";
+      coverageNote.textContent="Every discovered section is mapped. The quiz is now testing each important concept once before reinforcement.";
+    }else{
+      const pct=100;
+      coverageLabel.textContent=coveredConcepts+" / "+totalConcepts+" concepts";
+      coverageFill.style.width=pct+"%";
+      coverageMode.textContent="Reinforcement mode";
+      coverageMode.className="coverage-mode complete";
+      coverageNote.textContent="All tracked important concepts have been tested once. New questions now prioritize weak, important, and spaced concepts.";
+    }
+
+    coverageMap.innerHTML=state.sourceChunks.map(c=>{
+      const isDiscovered=(state.coveredSourceIds||[]).includes(c.id);
+      const cs=getConceptsForChunk(c.id);
+      const done=cs.length>0 && cs.every(x=>x.attempts>0);
+      return '<div class="coverage-item '+(done?"covered":(isDiscovered?"discovered":""))+'">'+
+        '<span class="coverage-dot">'+(done?"✓":(isDiscovered?"~":"•"))+'</span>'+
+        '<span><strong>'+escapeHtml(c.file)+'</strong><br><small>Page/Slide '+escapeHtml(c.page)+' · '+
+        (cs.length?cs.filter(x=>x.attempts>0).length+"/"+cs.length+" concepts":"mapping...")+
+        '</small></span></div>';
+    }).join("");
+  }
+
+  coverageToggle.addEventListener("click",()=>{
+    const hidden=coverageMap.classList.toggle("hidden");
+    coverageToggle.textContent=hidden?"Show coverage map":"Hide coverage map";
   });
 
   // ---------------- rendering the question ----------------
@@ -1183,6 +1454,33 @@
         if (!state.coveredSourceIds.includes(id)) state.coveredSourceIds.push(id);
       });
 
+      // Discovery is folded into the question-generation call: the model
+      // returns a tiny important-concept inventory alongside the first
+      // question for a source section. This avoids a separate indexing call.
+      if (q._primaryChunkId != null && Array.isArray(q.conceptInventory) && q.conceptInventory.length) {
+        addConceptInventory(q._primaryChunkId, q.conceptInventory);
+      }
+
+      let conceptId = null;
+      if (q._primaryChunkId != null) {
+        const ids = (state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
+        const normalized = String(q.conceptName||q.subtopic||"").trim().toLowerCase();
+        conceptId = ids.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
+        if (!conceptId && normalized) {
+          addConceptInventory(q._primaryChunkId,[{name:q.conceptName||q.subtopic,importance:q.conceptImportance||3}]);
+          const ids2=(state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
+          conceptId=ids2.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
+        }
+      }
+      q._conceptId=conceptId;
+      if (conceptId) {
+        state.lastConceptId=conceptId;
+        q.conceptName=state.concepts[conceptId].name;
+        q.conceptImportance=state.concepts[conceptId].importance;
+      }
+      state.questionNumber += 1;
+
+      updateCoverageUI();
       renderQuestion(q);
     } catch (err) {
       // Never hide the provider's real error. This makes auth, CORS, model,
@@ -1329,9 +1627,22 @@
     const isCorrect = verdict === "correct";
     state.score.total += 1;
     if (isCorrect) state.score.correct += 1;
+    if (q._conceptId && state.concepts && state.concepts[q._conceptId]) {
+      const c=state.concepts[q._conceptId];
+      c.attempts += 1;
+      if (verdict==="correct") c.correct += 1;
+      else if (verdict==="partial") c.partial += 1;
+      else c.incorrect += 1;
+      c.lastQuestion = state.questionNumber;
+      c.lastOutcome = verdict;
+      c.lastType = q.type;
+    }
+
     state.history.push({
       question: q.question,
       type: q.type,
+      conceptId: q._conceptId || "",
+      conceptName: q.conceptName || q.subtopic || "",
       category: q.category || "",
       topic: q.topic || "Topic not identified",
       subtopic: q.subtopic || q.topic || "Specific subtopic not identified",
@@ -1429,6 +1740,15 @@
     reportScore.textContent = pct + "%";
     reportCorrect.textContent = correct + " / " + total;
     reportWrong.textContent = report.wrong.length;
+
+    const totalSections=state.sourceChunks.length||0;
+    const coveredSections=(state.coveredSourceIds||[]).length;
+    const totalConcepts=(state.conceptOrder||[]).length;
+    const coveredConcepts=(state.conceptOrder||[]).map(id=>state.concepts[id]).filter(c=>c && c.attempts>0).length;
+    const coveragePct=totalConcepts?Math.round((coveredConcepts/totalConcepts)*100):0;
+    reportCoverageSummary.innerHTML=
+      '<strong>Concept coverage: '+coveredConcepts+' / '+totalConcepts+' important concepts ('+coveragePct+'%)</strong><br>'+
+      '<span>Source sections discovered: '+coveredSections+' / '+totalSections+'. Reinforcement prioritizes concepts you missed or only partially mastered.</span>';
 
     if (!report.topics.length) {
       reportTopics.innerHTML = '<div class="feedback correct"><span class="verdict">Excellent</span>No incorrect answers — no topics require review.</div>';
