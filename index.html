@@ -1364,6 +1364,87 @@
     .report-head{gap:12px !important;}
   }
 
+
+  /* ---------------- TEACH ME ---------------- */
+  .teach-hero{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:18px;
+    padding:22px; margin-bottom:18px; border:1px solid var(--card-border);
+    border-radius:10px; background:var(--paper-raised); box-shadow:var(--shadow);
+  }
+  .teach-kicker{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--rule-blue);}
+  .teach-hero h2{margin:6px 0 5px;font-size:25px;line-height:1.15;}
+  .teach-hero p{margin:0;color:var(--pencil);font-size:14px;line-height:1.55;max-width:540px;}
+  .teach-progress{
+    min-width:170px; text-align:right; font-family:'IBM Plex Mono',monospace;
+    font-size:10px; color:var(--pencil); text-transform:uppercase; letter-spacing:.8px;
+  }
+  .teach-progress strong{display:block;font-family:'Source Serif 4',Georgia,serif;font-size:18px;color:var(--ink);letter-spacing:0;text-transform:none;margin-top:5px;}
+  .teach-bar{height:7px;background:var(--card-border);border-radius:99px;overflow:hidden;margin-top:9px;}
+  .teach-bar-fill{height:100%;width:0;background:var(--rule-blue);transition:width .25s ease;}
+  .teach-card{
+    border:1px solid var(--card-border); border-radius:10px; background:var(--paper-raised);
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .teach-card-head{
+    padding:19px 22px 16px; border-bottom:1px solid var(--card-border);
+    background:linear-gradient(180deg,var(--paper-raised),var(--paper));
+  }
+  .teach-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .teach-badge{
+    display:inline-flex;align-items:center;border:1px solid var(--card-border);border-radius:5px;
+    padding:5px 9px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    color:var(--rule-blue);text-transform:uppercase;letter-spacing:.7px;background:var(--paper-raised);
+  }
+  .teach-card h3{font-size:24px;line-height:1.2;margin:0 0 5px;}
+  .teach-source{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--pencil);line-height:1.5;}
+  .teach-body{padding:20px 22px;}
+  .teach-section{margin-bottom:19px;}
+  .teach-section:last-child{margin-bottom:0;}
+  .teach-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--rule-blue);margin-bottom:6px;font-weight:600;}
+  .teach-text{font-size:16px;line-height:1.65;color:var(--ink);}
+  .teach-example,.teach-confusion{
+    padding:14px 16px;border-radius:7px;border-left:3px solid var(--rule-blue);
+    background:#F4F8FB;
+  }
+  .teach-confusion{border-left-color:var(--red-pen);background:var(--red-wash);}
+  .teach-check{
+    margin-top:22px;padding:17px;border:1px solid var(--card-border);border-radius:8px;background:var(--paper);
+  }
+  .teach-check-question{font-size:17px;line-height:1.5;font-weight:600;}
+  .teach-answer{
+    margin-top:12px;padding:13px 15px;border-radius:7px;background:var(--green-wash);
+    border-left:3px solid var(--green-check);font-size:15px;line-height:1.55;
+  }
+  .teach-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .teach-actions .btn{flex:1;min-width:150px;}
+  .teach-loading{
+    padding:48px 22px;text-align:center;color:var(--pencil);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;
+  }
+  .teach-loading strong{display:block;font-family:'Source Serif 4',Georgia,serif;font-size:19px;color:var(--ink);margin-bottom:7px;}
+  .teach-error{
+    padding:16px;border-left:3px solid var(--red-pen);background:var(--red-wash);
+    color:var(--ink);font-size:14px;line-height:1.5;
+  }
+  .teach-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .teach-meta{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--pencil-faint);
+    line-height:1.5;align-self:center;
+  }
+  @media(max-width:600px){
+    .teach-hero{flex-direction:column;padding:18px;}
+    .teach-progress{text-align:left;min-width:0;width:100%;}
+    .teach-card-head,.teach-body{padding:17px;}
+    .teach-card h3{font-size:21px;}
+    .teach-text{font-size:15px;}
+    .teach-actions{flex-direction:column;}
+    .teach-actions .btn{width:100%;}
+  }
+
+  [data-theme="dark"] .teach-example{background:#17283A;}
+  [data-theme="dark"] .teach-confusion{background:#321B20;}
+  [data-theme="dark"] .teach-check{background:#141B23;}
+
 </style>
 </head>
 <body>
@@ -1442,6 +1523,49 @@
         <button class="btn full" id="startBtn">Start quiz</button>
       </div>
       <div class="error-note hidden" id="setupError"></div>
+    </div>
+
+    <span class="folder-tab">Learn</span>
+    <div class="panel">
+      <div class="teach-kicker">Concept-first learning</div>
+      <h2 style="margin:6px 0 5px;font-size:22px;">Teach Me</h2>
+      <p style="margin:0 0 14px;color:var(--pencil);font-size:14px;line-height:1.55;">
+        Study Hall will teach the most important concepts from your material in order,
+        using explanations, examples and quick checks — before moving to reinforcement.
+      </p>
+      <button class="btn full" id="teachStartBtn">Teach me this material</button>
+      <div class="error-note hidden" id="teachSetupError"></div>
+    </div>
+  </div>
+
+  <!-- ============ TEACH ME SCREEN ============ -->
+  <div id="screen-teach" class="hidden">
+    <div class="teach-hero">
+      <div>
+        <div class="teach-kicker">Teach Me</div>
+        <h2 id="teachSubjectLabel">your material</h2>
+        <p>Concept first. Then intuition. Then an example. Then a quick check.</p>
+      </div>
+      <div class="teach-progress">
+        Concepts learned
+        <strong id="teachProgressLabel">0 / 0</strong>
+        <div class="teach-bar"><div class="teach-bar-fill" id="teachProgressFill"></div></div>
+      </div>
+    </div>
+
+    <div class="teach-card" id="teachCard">
+      <div class="teach-loading" id="teachLoading">
+        <strong>Preparing your first lesson…</strong>
+        Finding the most important concept in your material.
+      </div>
+    </div>
+
+    <div class="teach-footer">
+      <span class="teach-meta" id="teachMeta"></span>
+      <div class="teach-actions" style="margin-top:0;">
+        <button class="btn secondary" id="teachBackBtn">Back to setup</button>
+        <button class="btn" id="teachNextBtn">Next concept</button>
+      </div>
     </div>
   </div>
 
@@ -1548,13 +1672,18 @@
     reportGenerated: false,
     score: { correct: 0, total: 0 },
     answered: false,
-    backendAI: true
+    backendAI: true,
+    teachMode: false,
+    teachCurrent: null,
+    teachHistory: [],
+    teachConceptIds: []
   };
 
   // ---------------- element refs ----------------
   let screenSetup = document.getElementById("screen-setup");
   let screenQuiz = document.getElementById("screen-quiz");
   let screenResults = document.getElementById("screen-results");
+  let screenTeach = document.getElementById("screen-teach");
 
   let subjectInput = document.getElementById("subjectInput");
   let sourceText = document.getElementById("sourceText");
@@ -1594,6 +1723,16 @@
   let downloadReportBtn = document.getElementById("downloadReportBtn");
   let retakeBtn = document.getElementById("retakeBtn");
   let newMaterialBtn = document.getElementById("newMaterialBtn");
+
+  let teachStartBtn = document.getElementById("teachStartBtn");
+  let teachSetupError = document.getElementById("teachSetupError");
+  let teachSubjectLabel = document.getElementById("teachSubjectLabel");
+  let teachProgressLabel = document.getElementById("teachProgressLabel");
+  let teachProgressFill = document.getElementById("teachProgressFill");
+  let teachCard = document.getElementById("teachCard");
+  let teachMeta = document.getElementById("teachMeta");
+  let teachNextBtn = document.getElementById("teachNextBtn");
+  let teachBackBtn = document.getElementById("teachBackBtn");
 
   // ---------------- theme ----------------
   function applyTheme(choice){
@@ -1797,7 +1936,7 @@
         body: JSON.stringify({
           system,
           userPrompt,
-          task: "quiz"
+          task: "study"
         })
       });
     } catch (e) {
@@ -2431,12 +2570,286 @@ function formatSelectedSource(chunks){
     return parseJsonLoose(raw);
   }
 
+
+  // ---------------- TEACH ME ----------------
+  // Teach Me shares the browser-side source index with the quiz. It never
+  // sends the whole document: only one relevant source section is sent per lesson.
+  function chooseTeachTarget(){
+    ensureConceptRegistry();
+
+    let undiscovered=state.sourceChunks.filter(c=>c && !c.conceptsKnown);
+    if(undiscovered.length){
+      let primary=undiscovered[0];
+      return {phase:"DISCOVERY",primary,target:null};
+    }
+
+    let candidates=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
+    let unlearned=candidates.filter(c=>(c.teachAttempts||0)===0);
+    if(unlearned.length){
+      let target=[...unlearned].sort((a,b)=>
+        (b.importance||1)-(a.importance||1)
+      )[0];
+      let primary=state.sourceChunks.find(c=>c && c.id===target.chunkId)||state.sourceChunks[0];
+      return {phase:"CONCEPT_COVERAGE",primary,target};
+    }
+
+    let reinforced=[...candidates].sort((a,b)=>{
+      let pa=(b.incorrect||0)*5+(b.partial||0)*2+(b.importance||1)*3-(b.teachAttempts||0)*0.7;
+      let pb=(a.incorrect||0)*5+(a.partial||0)*2+(a.importance||1)*3-(a.teachAttempts||0)*0.7;
+      return pa-pb;
+    });
+    let target=reinforced[0];
+    let primary=target
+      ? (state.sourceChunks.find(c=>c && c.id===target.chunkId)||state.sourceChunks[0])
+      : state.sourceChunks[0];
+    return {phase:"REINFORCEMENT",primary,target};
+  }
+
+  function teachProgress(){
+    ensureConceptRegistry();
+    let all=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
+    let learned=all.filter(c=>(c.teachAttempts||0)>0).length;
+    teachProgressLabel.textContent=learned+" / "+all.length;
+    teachProgressFill.style.width=(all.length?Math.round(learned/all.length*100):0)+"%";
+  }
+
+  function teachSystemPrompt(){
+    return (
+      "You are the teaching engine inside Study Hall. "+
+      "Teach ONLY from the SOURCE SECTION provided. Do not use outside knowledge or invent examples that contradict the source. "+
+      "The goal is genuine conceptual understanding, not memorization of document wording. "+
+      "Identify the underlying concept, mechanism, relationship, distinction, cause/effect, decision rule, trade-off, or implication that the learner should understand. "+
+      "Do not teach slide/page numbers, deck structure, session ranges, exam maps, or study instructions as if they were substantive concepts. "+
+      "Use the source's terminology and framing. "+
+      "Explain simply but accurately: first the core idea, then why it matters, then a concrete example or analogy grounded in the source, then one common confusion. "+
+      "Finish with a short check-yourself question that requires understanding; do NOT reveal its answer in the question. "+
+      "Return ONLY valid JSON."
+    );
+  }
+
+  function teachSchema(){
+    return `Return JSON:
+{"topic":"broad topic",
+"subtopic":"specific concept",
+"conceptName":"exact concept being taught",
+"conceptImportance":3,
+"sourceFile":"exact FILE from source",
+"sourcePage":"exact PAGE/SLIDE from source",
+"sourceContent":"short label of source content",
+"coreIdea":"2-3 concise sentences explaining the concept",
+"whyItMatters":"1-2 concise sentences explaining significance",
+"example":"2-4 sentences giving a concrete, source-grounded example or analogy",
+"commonConfusion":"one common misconception or distinction to watch for",
+"checkQuestion":"one short conceptual self-check question",
+"checkAnswer":"1-2 sentence answer to the self-check",
+"conceptInventory":[{"name":"important concept","importance":3}]}
+conceptInventory is required only for DISCOVERY; otherwise return [].`;
+  }
+
+  async function generateTeachLesson(mode="lesson", instruction=""){
+    let plan;
+    if(mode==="variant" && state.teachCurrent){
+      let current=state.teachCurrent;
+      let currentConcept=state.concepts[current._conceptId] || null;
+      let primary=state.sourceChunks.find(c=>c && c.file===current.sourceFile && String(c.page)===String(current.sourcePage));
+      if(!primary) primary=state.sourceChunks[0];
+      plan={phase:"VARIANT",primary,target:currentConcept};
+    }else{
+      plan=chooseTeachTarget();
+    }
+
+    let primary=plan.primary;
+    if(!primary) throw new Error("No source material is indexed. Add your notes or upload a document first.");
+
+    let targetLine=plan.target
+      ? "\nTARGET CONCEPT: "+plan.target.name+
+        "\nImportance: "+(plan.target.importance||3)+"/3"+
+        "\nTeaching attempts so far: "+(plan.target.teachAttempts||0)
+      : "\nThis is the first pass through this source section. Identify the most important concept to teach first.";
+
+    let prompt=
+      "SUBJECT: "+(state.subject||"not specified")+
+      "\nTEACHING PHASE: "+plan.phase+
+      targetLine+
+      (instruction ? "\nSPECIAL REQUEST: "+instruction : "")+
+      "\n\nSOURCE SECTION:\n"+formatSelectedSource([primary])+
+      "\n\n"+teachSchema();
+
+    let raw=await callAI(teachSystemPrompt(),prompt,false);
+    let lesson=parseJsonLoose(raw);
+
+    if(!lesson || typeof lesson!=="object") throw new Error("The teaching engine returned an invalid lesson.");
+    if(!lesson.conceptName || !lesson.coreIdea || !lesson.checkQuestion || !lesson.checkAnswer){
+      throw new Error("The teaching engine returned an incomplete lesson. Please try again.");
+    }
+
+    lesson.topic=lesson.topic||plan.target?.topic||"Topic";
+    lesson.subtopic=lesson.subtopic||lesson.conceptName;
+    lesson.sourceFile=lesson.sourceFile||primary.file;
+    lesson.sourcePage=lesson.sourcePage||primary.page;
+    lesson.sourceContent=lesson.sourceContent||lesson.subtopic;
+    lesson.conceptInventory=Array.isArray(lesson.conceptInventory)?lesson.conceptInventory:[];
+
+    if(plan.phase==="DISCOVERY") addConceptInventory(primary.id,lesson.conceptInventory);
+
+    // Associate the taught concept with an existing concept when possible.
+    ensureConceptRegistry();
+    let concept=state.conceptOrder
+      .map(id=>state.concepts[id])
+      .find(c=>c && c.chunkId===primary.id &&
+        String(c.name).toLowerCase()===String(lesson.conceptName).toLowerCase());
+
+    if(!concept && plan.target) concept=plan.target;
+
+    if(concept){
+      if(mode!=="variant"){
+        concept.teachAttempts=(concept.teachAttempts||0)+1;
+        concept.teachLast=state.questionNumber||0;
+      }
+      lesson._conceptId=concept.id;
+    }
+
+    lesson._phase=plan.phase;
+    return lesson;
+  }
+
+  function renderTeachLesson(lesson){
+    state.teachCurrent=lesson;
+    teachProgress();
+
+    let escaped=(s)=>String(s||"").replace(/[&<>"']/g,m=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+
+    teachCard.innerHTML=
+      `<div class="teach-card-head">
+        <div class="teach-badges">
+          <span class="teach-badge">${escaped(lesson.topic)}</span>
+          <span class="teach-badge">${escaped(lesson.subtopic)}</span>
+        </div>
+        <h3>${escaped(lesson.conceptName)}</h3>
+        <div class="teach-source">${escaped(lesson.sourceFile)} · Page/Slide ${escaped(lesson.sourcePage)}</div>
+      </div>
+      <div class="teach-body">
+        <div class="teach-section">
+          <div class="teach-label">Core idea</div>
+          <div class="teach-text">${escaped(lesson.coreIdea)}</div>
+        </div>
+        <div class="teach-section">
+          <div class="teach-label">Why it matters</div>
+          <div class="teach-text">${escaped(lesson.whyItMatters)}</div>
+        </div>
+        <div class="teach-section teach-example">
+          <div class="teach-label">Example / intuition</div>
+          <div class="teach-text">${escaped(lesson.example)}</div>
+        </div>
+        <div class="teach-section teach-confusion">
+          <div class="teach-label">Common confusion</div>
+          <div class="teach-text">${escaped(lesson.commonConfusion)}</div>
+        </div>
+        <div class="teach-check">
+          <div class="teach-label">Check yourself</div>
+          <div class="teach-check-question">${escaped(lesson.checkQuestion)}</div>
+          <button class="btn secondary" id="revealTeachAnswerBtn" style="margin-top:12px;">Reveal answer</button>
+          <div class="teach-answer hidden" id="teachAnswer">${escaped(lesson.checkAnswer)}</div>
+        </div>
+        <div class="teach-actions">
+          <button class="btn secondary" id="teachExplainBtn">Explain differently</button>
+          <button class="btn secondary" id="teachExampleBtn">Give another example</button>
+        </div>
+      </div>`;
+
+    teachMeta.textContent=
+      "Source: "+(lesson.sourceFile||"Unknown")+" · Page/Slide "+(lesson.sourcePage||"Unknown");
+
+    document.getElementById("revealTeachAnswerBtn").addEventListener("click",()=>{
+      document.getElementById("teachAnswer").classList.remove("hidden");
+      document.getElementById("revealTeachAnswerBtn").classList.add("hidden");
+    });
+
+    document.getElementById("teachExplainBtn").addEventListener("click",async()=>{
+      await teachAction("Explain this same concept in a simpler way, using a different intuition. Do not introduce new facts.");
+    });
+
+    document.getElementById("teachExampleBtn").addEventListener("click",async()=>{
+      await teachAction("Give one different concrete example that applies the same concept. Keep it grounded in the source and clearly connect it back to the concept.");
+    });
+  }
+
+  async function teachAction(instruction){
+    if(!state.teachCurrent) return;
+    teachCard.innerHTML=`<div class="teach-loading"><strong>Reworking the explanation…</strong>Keeping the same concept and source.</div>`;
+    try{
+      let lesson=await generateTeachLesson("variant",instruction+
+        "\nThe learner is already studying this concept. Do not switch to another concept.");
+      renderTeachLesson(lesson);
+    }catch(err){
+      teachCard.innerHTML=`<div class="teach-error"><strong>Couldn't update the lesson.</strong><br>${String(err.message||err)}</div>`;
+    }
+  }
+
+  async function loadTeachLesson(){
+    teachCard.innerHTML=`<div class="teach-loading"><strong>Finding the next concept…</strong>Building a source-grounded lesson.</div>`;
+    teachNextBtn.disabled=true;
+    try{
+      let lesson=await generateTeachLesson();
+      renderTeachLesson(lesson);
+      teachNextBtn.disabled=false;
+    }catch(err){
+      teachNextBtn.disabled=false;
+      teachCard.innerHTML=`<div class="teach-error"><strong>Couldn't generate the lesson.</strong><br>${String(err.message||err)}<br><br><button class="btn secondary" id="teachRetryBtn">Try again</button></div>`;
+      document.getElementById("teachRetryBtn").addEventListener("click",loadTeachLesson);
+    }
+  }
+
+  function startTeachMode(){
+    let text=sourceText.value.trim();
+    teachSetupError.classList.add("hidden");
+    if(!text){
+      teachSetupError.textContent="Add source material first — paste text, or upload a document.";
+      teachSetupError.classList.remove("hidden");
+      return;
+    }
+
+    state.sourceText=text;
+    state.subject=subjectInput.value.trim();
+    state.sourceCursor=0;
+    state.coveredSourceIds=[];
+    state.concepts={};
+    state.conceptOrder=[];
+    state.questionNumber=0;
+    state.teachMode=true;
+    state.teachCurrent=null;
+    state.teachHistory=[];
+    buildSourceIndex();
+
+    teachSubjectLabel.textContent=state.subject||"your material";
+    teachProgress();
+    showScreen("teach");
+    loadTeachLesson();
+  }
+
   // ---------------- screen switching ----------------
   function showScreen(name){
     screenSetup.classList.toggle("hidden", name !== "setup");
     screenQuiz.classList.toggle("hidden", name !== "quiz");
     screenResults.classList.toggle("hidden", name !== "results");
+    screenTeach.classList.toggle("hidden", name !== "teach");
   }
+
+
+  // ---------------- Teach Me ----------------
+  teachStartBtn.addEventListener("click", startTeachMode);
+
+  teachNextBtn.addEventListener("click", async()=>{
+    if(!state.teachCurrent) return;
+    await loadTeachLesson();
+  });
+
+  teachBackBtn.addEventListener("click",()=>{
+    state.teachMode=false;
+    showScreen("setup");
+  });
 
   // ---------------- setup -> start ----------------
   startBtn.addEventListener("click", async () => {
