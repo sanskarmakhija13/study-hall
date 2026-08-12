@@ -673,7 +673,7 @@
   }
 
   // ---------------- state ----------------
-  const state = {
+  let state = {
     sourceText: "",
     sourceFiles: [],
     sourceChunks: [],
@@ -699,52 +699,52 @@
   };
 
   // ---------------- element refs ----------------
-  const screenSetup = document.getElementById("screen-setup");
-  const screenQuiz = document.getElementById("screen-quiz");
-  const screenResults = document.getElementById("screen-results");
+  let screenSetup = document.getElementById("screen-setup");
+  let screenQuiz = document.getElementById("screen-quiz");
+  let screenResults = document.getElementById("screen-results");
 
-  const subjectInput = document.getElementById("subjectInput");
-  const sourceText = document.getElementById("sourceText");
-  const fileInput = document.getElementById("fileInput");
-  const fileStatus = document.getElementById("fileStatus");
-  const fileChips = document.getElementById("fileChips");
-  const startBtn = document.getElementById("startBtn");
-  const setupError = document.getElementById("setupError");
+  let subjectInput = document.getElementById("subjectInput");
+  let sourceText = document.getElementById("sourceText");
+  let fileInput = document.getElementById("fileInput");
+  let fileStatus = document.getElementById("fileStatus");
+  let fileChips = document.getElementById("fileChips");
+  let startBtn = document.getElementById("startBtn");
+  let setupError = document.getElementById("setupError");
 
-  const qtypeGroup = document.getElementById("qtypeGroup");
-  const focusGroup = document.getElementById("focusGroup");
-  const difficultySelect = document.getElementById("difficultySelect");
+  let qtypeGroup = document.getElementById("qtypeGroup");
+  let focusGroup = document.getElementById("focusGroup");
+  let difficultySelect = document.getElementById("difficultySelect");
 
-  const quizSubjectLabel = document.getElementById("quizSubjectLabel");
-  const scoreCorrect = document.getElementById("scoreCorrect");
-  const scoreTotal = document.getElementById("scoreTotal");
-  const scantron = document.getElementById("scantron");
-  const questionCard = document.getElementById("questionCard");
-  const endQuizBtn = document.getElementById("endQuizBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  const coverageLabel = document.getElementById("coverageLabel");
-  const coverageMode = document.getElementById("coverageMode");
-  const coverageFill = document.getElementById("coverageFill");
-  const coverageNote = document.getElementById("coverageNote");
-  const coverageToggle = document.getElementById("coverageToggle");
-  const coverageMap = document.getElementById("coverageMap");
+  let quizSubjectLabel = document.getElementById("quizSubjectLabel");
+  let scoreCorrect = document.getElementById("scoreCorrect");
+  let scoreTotal = document.getElementById("scoreTotal");
+  let scantron = document.getElementById("scantron");
+  let questionCard = document.getElementById("questionCard");
+  let endQuizBtn = document.getElementById("endQuizBtn");
+  let nextBtn = document.getElementById("nextBtn");
+  let coverageLabel = document.getElementById("coverageLabel");
+  let coverageMode = document.getElementById("coverageMode");
+  let coverageFill = document.getElementById("coverageFill");
+  let coverageNote = document.getElementById("coverageNote");
+  let coverageToggle = document.getElementById("coverageToggle");
+  let coverageMap = document.getElementById("coverageMap");
 
-  const reportSubject = document.getElementById("reportSubject");
-  const reportGrade = document.getElementById("reportGrade");
-  const reportScore = document.getElementById("reportScore");
-  const reportCorrect = document.getElementById("reportCorrect");
-  const reportWrong = document.getElementById("reportWrong");
-  const reportTopics = document.getElementById("reportTopics");
-  const reportCoverageSummary = document.getElementById("reportCoverageSummary");
-  const reportWrongQuestions = document.getElementById("reportWrongQuestions");
-  const downloadReportBtn = document.getElementById("downloadReportBtn");
-  const retakeBtn = document.getElementById("retakeBtn");
-  const newMaterialBtn = document.getElementById("newMaterialBtn");
+  let reportSubject = document.getElementById("reportSubject");
+  let reportGrade = document.getElementById("reportGrade");
+  let reportScore = document.getElementById("reportScore");
+  let reportCorrect = document.getElementById("reportCorrect");
+  let reportWrong = document.getElementById("reportWrong");
+  let reportTopics = document.getElementById("reportTopics");
+  let reportCoverageSummary = document.getElementById("reportCoverageSummary");
+  let reportWrongQuestions = document.getElementById("reportWrongQuestions");
+  let downloadReportBtn = document.getElementById("downloadReportBtn");
+  let retakeBtn = document.getElementById("retakeBtn");
+  let newMaterialBtn = document.getElementById("newMaterialBtn");
 
   // ---------------- pill groups ----------------
   function wirePillGroup(group, stateKey){
     group.addEventListener("click", (e) => {
-      const btn = e.target.closest(".choice-pill");
+      let btn = e.target.closest(".choice-pill");
       if (!btn) return;
       [...group.children].forEach(c => c.classList.remove("active"));
       btn.classList.add("active");
@@ -757,21 +757,21 @@
 
   // ---------------- file upload ----------------
   fileInput.addEventListener("change", async () => {
-    const files = [...fileInput.files];
+    let files = [...fileInput.files];
     fileInput.value = "";
-    for (const file of files) {
+    for (let file of files) {
       await handleFile(file);
     }
   });
 
   async function handleFile(file){
-    const lower = file.name.toLowerCase();
+    let lower = file.name.toLowerCase();
     fileStatus.textContent = "Reading " + file.name + "...";
     try {
       if (lower.match(/\.(png|jpe?g|webp)$/)) {
         if (!state.sourceFiles.includes(file.name)) state.sourceFiles.push(file.name);
-        const dataUrl = await readAsDataUrl(file);
-        const base64 = dataUrl.split(",")[1];
+        let dataUrl = await readAsDataUrl(file);
+        let base64 = dataUrl.split(",")[1];
         state.images.push({ mimeType: file.type || "image/png", data: base64, name: file.name, thumb: dataUrl });
         renderFileChips();
         fileStatus.textContent = "Added screenshot " + file.name + ". It'll be shown to the AI directly when writing questions.";
@@ -804,7 +804,7 @@
 
   function readAsDataUrl(file){
     return new Promise((resolve, reject) => {
-      const r = new FileReader();
+      let r = new FileReader();
       r.onload = () => resolve(r.result);
       r.onerror = () => reject(new Error("read failed"));
       r.readAsDataURL(file);
@@ -814,10 +814,10 @@
   function renderFileChips(){
     fileChips.innerHTML = "";
     state.images.forEach((img, i) => {
-      const chip = document.createElement("div");
+      let chip = document.createElement("div");
       chip.className = "chip";
       chip.innerHTML = '<img src="' + img.thumb + '" alt=""><span>' + escapeHtml(img.name) + '</span>';
-      const removeBtn = document.createElement("button");
+      let removeBtn = document.createElement("button");
       removeBtn.className = "chip-remove";
       removeBtn.type = "button";
       removeBtn.textContent = "×";
@@ -832,14 +832,14 @@
 
   async function extractPdfText(file){
     if (!window.pdfjsLib) throw new Error("pdf.js not loaded");
-    const buf = await file.arrayBuffer();
-    const doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
+    let buf = await file.arrayBuffer();
+    let doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
     let out = "";
-    const maxPages = Math.min(doc.numPages, 40);
+    let maxPages = Math.min(doc.numPages, 40);
     for (let i = 1; i <= maxPages; i++) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = content.items.map(it => it.str).join(" ").trim();
+      let page = await doc.getPage(i);
+      let content = await page.getTextContent();
+      let pageText = content.items.map(it => it.str).join(" ").trim();
       if (pageText) {
         out += "\n[DOCUMENT: " + file.name + " | PAGE " + i + "]\n" + pageText + "\n";
       }
@@ -850,28 +850,28 @@
 
   async function extractDocxText(file){
     if (!window.mammoth) throw new Error("mammoth not loaded");
-    const buf = await file.arrayBuffer();
-    const result = await window.mammoth.extractRawText({ arrayBuffer: buf });
+    let buf = await file.arrayBuffer();
+    let result = await window.mammoth.extractRawText({ arrayBuffer: buf });
     return result.value || "";
   }
 
   async function extractPptxText(file){
     if (!window.JSZip) throw new Error("jszip not loaded");
-    const buf = await file.arrayBuffer();
-    const zip = await window.JSZip.loadAsync(buf);
-    const slideFiles = Object.keys(zip.files)
+    let buf = await file.arrayBuffer();
+    let zip = await window.JSZip.loadAsync(buf);
+    let slideFiles = Object.keys(zip.files)
       .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
       .sort((a, b) => {
-        const na = parseInt(a.match(/(\d+)/)[1], 10);
-        const nb = parseInt(b.match(/(\d+)/)[1], 10);
+        let na = parseInt(a.match(/(\d+)/)[1], 10);
+        let nb = parseInt(b.match(/(\d+)/)[1], 10);
         return na - nb;
       });
     let out = "";
-    for (const name of slideFiles) {
-      const xml = await zip.files[name].async("text");
-      const matches = xml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
-      const slideText = matches.map(m => m.replace(/<a:t>|<\/a:t>/g, "")).join(" ").trim();
-      const slideNo = parseInt(name.match(/slide(\d+)\.xml/)[1], 10);
+    for (let name of slideFiles) {
+      let xml = await zip.files[name].async("text");
+      let matches = xml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+      let slideText = matches.map(m => m.replace(/<a:t>|<\/a:t>/g, "")).join(" ").trim();
+      let slideNo = parseInt(name.match(/slide(\d+)\.xml/)[1], 10);
       if (slideText) out += "\n[DOCUMENT: " + file.name + " | PAGE " + slideNo + " / SLIDE " + slideNo + "]\n" + slideText + "\n";
       if (out.length > 20000) break;
     }
@@ -932,14 +932,14 @@
     try {
       return JSON.parse(t);
     } catch (_) {
-      const firstObj = t.indexOf("{");
-      const lastObj = t.lastIndexOf("}");
+      let firstObj = t.indexOf("{");
+      let lastObj = t.lastIndexOf("}");
       if (firstObj !== -1 && lastObj > firstObj) {
         return JSON.parse(t.substring(firstObj, lastObj + 1));
       }
 
-      const firstArr = t.indexOf("[");
-      const lastArr = t.lastIndexOf("]");
+      let firstArr = t.indexOf("[");
+      let lastArr = t.lastIndexOf("]");
       if (firstArr !== -1 && lastArr > firstArr) {
         return JSON.parse(t.substring(firstArr, lastArr + 1));
       }
@@ -951,13 +951,13 @@
   // ---------------- local source index / token-saving retrieval ----------------
   // Indexing happens entirely in the browser, so it uses ZERO API tokens.
   function buildSourceIndex(){
-    const raw = String(state.sourceText || "").trim();
+    let raw = String(state.sourceText || "").trim();
     state.sourceChunks = [];
     state.sourceCursor = 0;
     if (!raw) return;
 
-    const markerRe = /\[DOCUMENT:\s*([^\|\]]+?)\s*\|\s*PAGE\s*([^\]]+?)\]/gi;
-    const markers = [];
+    let markerRe = /\[DOCUMENT:\s*([^\|\]]+?)\s*\|\s*PAGE\s*([^\]]+?)\]/gi;
+    let markers = [];
     let m;
     while ((m = markerRe.exec(raw)) !== null) {
       markers.push({ start:m.index, end:markerRe.lastIndex, file:m[1].trim(), page:m[2].trim() });
@@ -965,9 +965,9 @@
 
     if (markers.length) {
       for (let i=0; i<markers.length; i++) {
-        const content = raw.slice(markers[i].end, i+1<markers.length ? markers[i+1].start : raw.length).trim();
+        let content = raw.slice(markers[i].end, i+1<markers.length ? markers[i+1].start : raw.length).trim();
         if (!content) continue;
-        const maxChars=6500;
+        let maxChars=6500;
         for (let pos=0; pos<content.length; pos+=maxChars) {
           state.sourceChunks.push({
             id:state.sourceChunks.length,
@@ -980,7 +980,7 @@
         }
       }
     } else {
-      const maxChars=6500;
+      let maxChars=6500;
       for (let pos=0; pos<raw.length; pos+=maxChars) {
         state.sourceChunks.push({
           id:state.sourceChunks.length,
@@ -1016,21 +1016,21 @@
 
   function getConceptsForChunk(chunkId){
     ensureConceptRegistry();
-    const chunk=state.sourceChunks.find(c=>c.id===chunkId);
+    let chunk=state.sourceChunks.find(c=>c.id===chunkId);
     if(!chunk) return [];
     return (chunk.conceptIds||[]).map(id=>state.concepts[id]).filter(Boolean);
   }
 
   function addConceptInventory(chunkId, inventory){
     ensureConceptRegistry();
-    const chunk=state.sourceChunks.find(c=>c && c.id===chunkId);
+    let chunk=state.sourceChunks.find(c=>c && c.id===chunkId);
     if(!chunk || !Array.isArray(inventory)) return;
 
     inventory.slice(0,6).forEach((raw, idx)=>{
-      const name=String(raw?.name || raw?.concept || "").trim();
+      let name=String(raw?.name || raw?.concept || "").trim();
       if(!name) return;
 
-      const id=conceptKey(chunkId,name);
+      let id=conceptKey(chunkId,name);
       if(!state.concepts[id]){
         state.concepts[id]={
           id,
@@ -1061,16 +1061,16 @@
 
   function conceptPriority(c){
     if(!c) return -Infinity;
-    const age=Math.max(0, state.questionNumber-(c.lastQuestion||0));
-    const wrongBoost=c.incorrect*5 + c.partial*2.5;
-    const unseenBoost=c.attempts===0 ? 25 : 0;
-    const importanceBoost=c.importance*4;
-    const spacingBoost=Math.min(5,age*0.35);
+    let age=Math.max(0, state.questionNumber-(c.lastQuestion||0));
+    let wrongBoost=c.incorrect*5 + c.partial*2.5;
+    let unseenBoost=c.attempts===0 ? 25 : 0;
+    let importanceBoost=c.importance*4;
+    let spacingBoost=Math.min(5,age*0.35);
     return unseenBoost + wrongBoost + importanceBoost + spacingBoost - c.attempts*0.8;
   }
 
   function chooseBestConcept(candidates, avoidId){
-    const list=(candidates||[]).filter(c=>c && c.id!==avoidId);
+    let list=(candidates||[]).filter(c=>c && c.id!==avoidId);
     if(!list.length) return null;
     return [...list].sort((a,b)=>conceptPriority(b)-conceptPriority(a))[0];
   }
@@ -1078,7 +1078,7 @@
   function chooseQuestionTarget(focus){
     ensureConceptRegistry();
 
-    const undiscovered = state.sourceChunks.filter(function(c){
+    let undiscovered = state.sourceChunks.filter(function(c){
       return c && !c.conceptsKnown;
     });
 
@@ -1090,15 +1090,15 @@
       let bestDistance = Math.abs(idx - state.sourceCursor);
 
       for (let i = 1; i < undiscovered.length; i++) {
-        const candidateId = undiscovered[i].id;
-        const distance = Math.abs(candidateId - state.sourceCursor);
+        let candidateId = undiscovered[i].id;
+        let distance = Math.abs(candidateId - state.sourceCursor);
         if (distance < bestDistance) {
           idx = candidateId;
           bestDistance = distance;
         }
       }
 
-      const primary = state.sourceChunks.find(function(c){
+      let primary = state.sourceChunks.find(function(c){
         return c && c.id === idx;
       }) || undiscovered[0];
 
@@ -1115,13 +1115,13 @@
     }
 
     // Phase 2: cover every tracked important concept once.
-    const uncovered = state.conceptOrder
+    let uncovered = state.conceptOrder
       .map(function(id){ return state.concepts[id]; })
       .filter(function(c){ return c && c.attempts === 0; });
 
     if (uncovered.length) {
-      const target = chooseBestConcept(uncovered, state.lastConceptId) || uncovered[0];
-      const primary = state.sourceChunks.find(function(c){
+      let target = chooseBestConcept(uncovered, state.lastConceptId) || uncovered[0];
+      let primary = state.sourceChunks.find(function(c){
         return c && c.id === target.chunkId;
       }) || state.sourceChunks[0];
 
@@ -1138,14 +1138,14 @@
     }
 
     // Phase 3: adaptive reinforcement.
-    const all = state.conceptOrder
+    let all = state.conceptOrder
       .map(function(id){ return state.concepts[id]; })
       .filter(Boolean);
 
-    const target = chooseBestConcept(all, state.lastConceptId) ||
+    let target = chooseBestConcept(all, state.lastConceptId) ||
                    chooseBestConcept(all, null);
 
-    const primary = target
+    let primary = target
       ? (state.sourceChunks.find(function(c){
           return c && c.id === target.chunkId;
         }) || state.sourceChunks[0])
@@ -1165,7 +1165,7 @@
 
   function selectAdjacent(primary){
     if(!primary || state.sourceChunks.length<2) return primary?[primary]:[];
-    const next=state.sourceChunks[(primary.id+1)%state.sourceChunks.length];
+    let next=state.sourceChunks[(primary.id+1)%state.sourceChunks.length];
     return next && next.file===primary.file && next.id!==primary.id ? [primary,next] : [primary];
   }
 
@@ -1207,8 +1207,8 @@ function formatSelectedSource(chunks){
   }
 
   function questionSimilarity(a, b){
-    const A = new Set(normalizeQuestionText(a));
-    const B = new Set(normalizeQuestionText(b));
+    let A = new Set(normalizeQuestionText(a));
+    let B = new Set(normalizeQuestionText(b));
     if (!A.size || !B.size) return 0;
     let intersection = 0;
     A.forEach(w => { if (B.has(w)) intersection++; });
@@ -1216,20 +1216,20 @@ function formatSelectedSource(chunks){
   }
 
   function isTooSimilarToRecent(q){
-    const recent = state.history.slice(-4);
-    const recentAsked = state.askedTexts.slice(-4);
+    let recent = state.history.slice(-4);
+    let recentAsked = state.askedTexts.slice(-4);
 
     // Never ask the same specific subtopic/case consecutively.
-    const qSubtopic = String(q.subtopic || "").trim().toLowerCase();
-    const qSource = String(q.sourceContent || "").trim().toLowerCase();
+    let qSubtopic = String(q.subtopic || "").trim().toLowerCase();
+    let qSource = String(q.sourceContent || "").trim().toLowerCase();
 
-    for (const h of recent) {
-      const sameSubtopic =
+    for (let h of recent) {
+      let sameSubtopic =
         qSubtopic &&
         h.subtopic &&
         qSubtopic === String(h.subtopic).trim().toLowerCase();
 
-      const sameSource =
+      let sameSource =
         qSource &&
         h.sourceContent &&
         qSource === String(h.sourceContent).trim().toLowerCase();
@@ -1241,7 +1241,7 @@ function formatSelectedSource(chunks){
       if (questionSimilarity(q.question, h.question) >= 0.58) return true;
     }
 
-    for (const oldQuestion of recentAsked) {
+    for (let oldQuestion of recentAsked) {
       if (questionSimilarity(q.question, oldQuestion) >= 0.68) return true;
     }
 
@@ -1249,28 +1249,28 @@ function formatSelectedSource(chunks){
   }
 
   async function generateQuestion(){
-    const type=pickType();
-    const focus=pickFocus();
-    const applicationStyle=focus==="application" ? pickApplicationStyle() : "none";
-    const avoidList=state.askedTexts.slice(-4).map(q=>String(q).slice(0,140));
+    let type=pickType();
+    let focus=pickFocus();
+    let applicationStyle=focus==="application" ? pickApplicationStyle() : "none";
+    let avoidList=state.askedTexts.slice(-4).map(q=>String(q).slice(0,140));
     state.askedConcepts=Array.isArray(state.askedConcepts)?state.askedConcepts:[];
 
-    const recentConcepts=state.history.slice(-5).map(h=>
+    let recentConcepts=state.history.slice(-5).map(h=>
       "- "+(h.topic||"unknown")+" | "+(h.subtopic||"unknown")+
       " | "+(h.sourceFile||"unknown")+" — Page "+(h.sourcePage||"unknown")+
       " | outcome="+(h.verdict||"unknown")
     );
 
-    const plan=chooseQuestionTarget(focus);
-    const selected=Array.isArray(plan.selected) ? plan.selected.filter(Boolean) : [];
-    const primary=plan.primary || selected[0];
+    let plan=chooseQuestionTarget(focus);
+    let selected=Array.isArray(plan.selected) ? plan.selected.filter(Boolean) : [];
+    let primary=plan.primary || selected[0];
     if(!primary || !selected.length) throw new Error("No source sections were indexed. Re-upload or paste your study material.");
 
-    const sourceForQuestion=formatSelectedSource(selected);
-    const primaryConcepts=getConceptsForChunk(primary.id);
-    const knownConcepts=primaryConcepts.map(c=>c.name).join(", ");
+    let sourceForQuestion=formatSelectedSource(selected);
+    let primaryConcepts=getConceptsForChunk(primary.id);
+    let knownConcepts=primaryConcepts.map(c=>c.name).join(", ");
 
-    const system=
+    let system=
       "You write one quiz question strictly from the SOURCE SECTIONS provided. "+
       "Do not use outside knowledge. Respond with ONLY valid JSON. "+
       "Use the exact FILE and PAGE/SLIDE metadata from the source section that supports the question. Never guess a page. "+
@@ -1308,18 +1308,18 @@ function formatSelectedSource(chunks){
         "Also return 3-6 important concepts in conceptInventory for later coverage.";
     }
 
-    const focusInstruction=focus==="fact"
+    let focusInstruction=focus==="fact"
       ? "FACT MODE: test recall of a specific fact, term, detail, or relationship in the source."
       : (applicationStyle==="case"
         ? "APPLICATION MODE — CASE: create a short 2-4 sentence mini-case, then ask the student to apply the target concept. This should be a realistic transfer problem, not a definition question."
         : "APPLICATION MODE — DIRECT: do NOT create a caselet. Ask the student to apply, diagnose, compare, choose, or predict using the target concept. Require reasoning beyond repeating a definition.");
 
-    const diversity=
+    let diversity=
       (avoidList.length?"Do not repeat or closely resemble:\n- "+avoidList.join("\n- ")+"\n":"")+
       (recentConcepts.length?"\nRECENT CONCEPTS — avoid these exact concepts/angles:\n"+recentConcepts.join("\n")+"\n":"")+
       "\nFor application questions, alternate CASE and DIRECT styles where possible. Do not make every application question a case study.";
 
-    const prompt=
+    let prompt=
       "SUBJECT: "+(state.subject||"not specified")+"\n"+
       "DIFFICULTY: "+state.difficulty+"\n"+
       "PHASE: "+plan.phase+"\n"+
@@ -1328,8 +1328,8 @@ function formatSelectedSource(chunks){
 
     let last=null;
     for(let attempt=0;attempt<3;attempt++){
-      const retry=attempt===0?"":"\nThe previous candidate was too similar. Keep the same target concept but use a meaningfully different question angle.";
-      const parsed=parseJsonLoose(await callAI(system,prompt+retry,false));
+      let retry=attempt===0?"":"\nThe previous candidate was too similar. Keep the same target concept but use a meaningfully different question angle.";
+      let parsed=parseJsonLoose(await callAI(system,prompt+retry,false));
       if(!parsed.question) throw new Error("Malformed question");
 
       parsed.topic=parsed.topic||"Topic not identified";
@@ -1352,14 +1352,14 @@ function formatSelectedSource(chunks){
 
 
   async function gradeSubjective(question, idealAnswer, userAnswer){
-    const system = "You are a fair, encouraging grader for a self-study quiz app. Respond with ONLY raw JSON: " +
+    let system = "You are a fair, encouraging grader for a self-study quiz app. Respond with ONLY raw JSON: " +
       '{"verdict":"correct"|"partial"|"incorrect","feedback":"one short, specific sentence of feedback"}. ' +
       'Use "correct" when the answer captures the key idea even if worded differently, "partial" when it is on the right track but missing something important, "incorrect" when it misses the point.';
-    const userPrompt =
+    let userPrompt =
       "Question: " + question + "\n" +
       "Model answer: " + idealAnswer + "\n" +
       "Student's answer: " + (userAnswer || "(left blank)");
-    const raw = await callAI(system, userPrompt, false);
+    let raw = await callAI(system, userPrompt, false);
     return parseJsonLoose(raw);
   }
 
@@ -1372,7 +1372,7 @@ function formatSelectedSource(chunks){
 
   // ---------------- setup -> start ----------------
   startBtn.addEventListener("click", async () => {
-    const text = sourceText.value.trim();
+    let text = sourceText.value.trim();
     setupError.classList.add("hidden");
     if (!text && state.images.length === 0) {
       setupError.textContent = "Add some source material first — paste text, or upload a file or screenshot.";
@@ -1403,30 +1403,30 @@ function formatSelectedSource(chunks){
   });
 
   function updateCoverageUI(){
-    const chunks=state.sourceChunks.length||0;
-    const discovered=(state.coveredSourceIds||[]).length;
-    const allConcepts=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
-    const totalConcepts=allConcepts.length;
-    const coveredConcepts=allConcepts.filter(c=>c.attempts>0).length;
-    const allDiscovered=chunks>0 && discovered>=chunks;
-    const allCovered=totalConcepts>0 && coveredConcepts>=totalConcepts;
+    let chunks=state.sourceChunks.length||0;
+    let discovered=(state.coveredSourceIds||[]).length;
+    let allConcepts=state.conceptOrder.map(id=>state.concepts[id]).filter(Boolean);
+    let totalConcepts=allConcepts.length;
+    let coveredConcepts=allConcepts.filter(c=>c.attempts>0).length;
+    let allDiscovered=chunks>0 && discovered>=chunks;
+    let allCovered=totalConcepts>0 && coveredConcepts>=totalConcepts;
 
     if(!allDiscovered){
-      const pct=chunks?Math.round((discovered/chunks)*100):0;
+      let pct=chunks?Math.round((discovered/chunks)*100):0;
       coverageLabel.textContent=discovered+" / "+chunks+" source sections";
       coverageFill.style.width=pct+"%";
       coverageMode.textContent="Building concept map";
       coverageMode.className="coverage-mode";
       coverageNote.textContent="Discovering important concepts across the source first. No separate indexing call is being used.";
     }else if(!allCovered){
-      const pct=totalConcepts?Math.round((coveredConcepts/totalConcepts)*100):0;
+      let pct=totalConcepts?Math.round((coveredConcepts/totalConcepts)*100):0;
       coverageLabel.textContent=coveredConcepts+" / "+totalConcepts+" important concepts";
       coverageFill.style.width=pct+"%";
       coverageMode.textContent="Concept coverage";
       coverageMode.className="coverage-mode";
       coverageNote.textContent="Every discovered section is mapped. The quiz is now testing each important concept once before reinforcement.";
     }else{
-      const pct=100;
+      let pct=100;
       coverageLabel.textContent=coveredConcepts+" / "+totalConcepts+" concepts";
       coverageFill.style.width=pct+"%";
       coverageMode.textContent="Reinforcement mode";
@@ -1435,9 +1435,9 @@ function formatSelectedSource(chunks){
     }
 
     coverageMap.innerHTML=state.sourceChunks.map(c=>{
-      const isDiscovered=(state.coveredSourceIds||[]).includes(c.id);
-      const cs=getConceptsForChunk(c.id);
-      const done=cs.length>0 && cs.every(x=>x.attempts>0);
+      let isDiscovered=(state.coveredSourceIds||[]).includes(c.id);
+      let cs=getConceptsForChunk(c.id);
+      let done=cs.length>0 && cs.every(x=>x.attempts>0);
       return '<div class="coverage-item '+(done?"covered":(isDiscovered?"discovered":""))+'">'+
         '<span class="coverage-dot">'+(done?"✓":(isDiscovered?"~":"•"))+'</span>'+
         '<span><strong>'+escapeHtml(c.file)+'</strong><br><small>Page/Slide '+escapeHtml(c.page)+' · '+
@@ -1447,7 +1447,7 @@ function formatSelectedSource(chunks){
   }
 
   coverageToggle.addEventListener("click",()=>{
-    const hidden=coverageMap.classList.toggle("hidden");
+    let hidden=coverageMap.classList.toggle("hidden");
     coverageToggle.textContent=hidden?"Show coverage map":"Hide coverage map";
   });
 
@@ -1460,7 +1460,7 @@ function formatSelectedSource(chunks){
   function renderError(msg, retryFn){
     questionCard.innerHTML =
       '<div class="feedback incorrect"><span class="verdict">Couldn\'t generate a question</span>' + escapeHtml(msg) + '</div>';
-    const retryBtn = document.createElement("button");
+    let retryBtn = document.createElement("button");
     retryBtn.className = "btn secondary";
     retryBtn.style.marginTop = "14px";
     retryBtn.textContent = "Try again";
@@ -1476,7 +1476,7 @@ function formatSelectedSource(chunks){
 
     for(let attempt=0; attempt<2; attempt++){
       try {
-        const q = await generateQuestion();
+        let q = await generateQuestion();
         state.currentQuestion = q;
       state.askedTexts.push(q.question);
       if (!Array.isArray(state.askedConcepts)) state.askedConcepts = [];
@@ -1502,12 +1502,12 @@ function formatSelectedSource(chunks){
 
       let conceptId = null;
       if (q._primaryChunkId != null) {
-        const ids = (state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
-        const normalized = String(q.conceptName||q.subtopic||"").trim().toLowerCase();
+        let ids = (state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
+        let normalized = String(q.conceptName||q.subtopic||"").trim().toLowerCase();
         conceptId = ids.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
         if (!conceptId && normalized) {
           addConceptInventory(q._primaryChunkId,[{name:q.conceptName||q.subtopic,importance:q.conceptImportance||3}]);
-          const ids2=(state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
+          let ids2=(state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
           conceptId=ids2.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
         }
       }
@@ -1528,7 +1528,7 @@ function formatSelectedSource(chunks){
       }
     }
 
-    const message = lastError && lastError.message
+    let message = lastError && lastError.message
       ? lastError.message
       : "Unknown AI engine error. The app will automatically rotate through the configured providers.";
     console.error("Study Hall question generation failed:", lastError);
@@ -1536,14 +1536,14 @@ function formatSelectedSource(chunks){
   }
 
   function escapeHtml(s){
-    const d = document.createElement("div");
+    let d = document.createElement("div");
     d.textContent = s == null ? "" : String(s);
     return d.innerHTML;
   }
 
   function renderQuestion(q){
-    const badgeType = q.type === "mcq" ? "Multiple choice" : "Written answer";
-    const badgeCat = q.category === "application" ? "Application" : "Fact-based";
+    let badgeType = q.type === "mcq" ? "Multiple choice" : "Written answer";
+    let badgeCat = q.category === "application" ? "Application" : "Fact-based";
 
     let html = '<div class="q-meta">' +
       '<span class="q-badge">' + badgeType + '</span>' +
@@ -1591,12 +1591,12 @@ function formatSelectedSource(chunks){
   function handleMcqAnswer(chosenIndex){
     if (state.answered) return;
     state.answered = true;
-    const q = state.currentQuestion;
-    const correct = chosenIndex === q.correctIndex;
+    let q = state.currentQuestion;
+    let correct = chosenIndex === q.correctIndex;
 
     questionCard.querySelectorAll(".option").forEach((btn, i) => {
       btn.disabled = true;
-      const stateLabel = btn.querySelector(".answer-state");
+      let stateLabel = btn.querySelector(".answer-state");
 
       if (i === q.correctIndex) {
         btn.classList.add("reveal-correct");
@@ -1627,51 +1627,51 @@ function formatSelectedSource(chunks){
 
   async function handleSubjectiveSubmit(){
     if (state.answered) return;
-    const input = document.getElementById("subjectiveInput");
-    const answer = input.value.trim();
-    const submitBtn = document.getElementById("submitSubjectiveBtn");
+    let input = document.getElementById("subjectiveInput");
+    let answer = input.value.trim();
+    let submitBtn = document.getElementById("submitSubjectiveBtn");
     submitBtn.disabled = true;
     submitBtn.textContent = "Grading...";
-    const q = state.currentQuestion;
+    let q = state.currentQuestion;
     try {
-      const result = await gradeSubjective(q.question, q.idealAnswer, answer);
+      let result = await gradeSubjective(q.question, q.idealAnswer, answer);
       state.answered = true;
       input.disabled = true;
       submitBtn.remove();
-      const isCorrect = result.verdict === "correct";
+      let isCorrect = result.verdict === "correct";
       showStamp(isCorrect);
-      const feedbackText = (result.feedback || "") + " Model answer: " + q.idealAnswer;
+      let feedbackText = (result.feedback || "") + " Model answer: " + q.idealAnswer;
       showFeedback(result.verdict === "incorrect" ? "incorrect" : "correct", feedbackText, result.verdict);
       recordAnswer(q, result.verdict, result.feedback || "", answer, q.idealAnswer);
       nextBtn.classList.remove("hidden");
     } catch (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = "Submit answer";
-      const slot = document.getElementById("feedbackSlot");
+      let slot = document.getElementById("feedbackSlot");
       slot.innerHTML = '<div class="feedback incorrect"><span class="verdict">Grading failed</span>Couldn\'t reach the grader — the AI pool may be temporarily busy. Try again.</div>';
     }
   }
 
   function showStamp(correct){
-    const stamp = document.createElement("div");
+    let stamp = document.createElement("div");
     stamp.className = "stamp " + (correct ? "correct" : "incorrect");
     stamp.textContent = correct ? "Correct" : "Revise";
     questionCard.appendChild(stamp);
   }
 
   function showFeedback(kind, text, verdict){
-    const slot = document.getElementById("feedbackSlot");
-    const label = verdict === "partial" ? "Partially right" : (kind === "correct" ? "Correct" : "Not quite");
+    let slot = document.getElementById("feedbackSlot");
+    let label = verdict === "partial" ? "Partially right" : (kind === "correct" ? "Correct" : "Not quite");
     slot.innerHTML = '<div class="feedback ' + (kind === "correct" ? "correct" : "incorrect") + '">' +
       '<span class="verdict">' + label + '</span>' + escapeHtml(text) + '</div>';
   }
 
   function recordAnswer(q, verdict, explanation, userAnswer, correctAnswer){
-    const isCorrect = verdict === "correct";
+    let isCorrect = verdict === "correct";
     state.score.total += 1;
     if (isCorrect) state.score.correct += 1;
     if (q._conceptId && state.concepts && state.concepts[q._conceptId]) {
-      const c=state.concepts[q._conceptId];
+      let c=state.concepts[q._conceptId];
       c.attempts += 1;
       if (verdict==="correct") c.correct += 1;
       else if (verdict==="partial") c.partial += 1;
@@ -1708,7 +1708,7 @@ function formatSelectedSource(chunks){
   }
 
   function addScantronBubble(correct){
-    const b = document.createElement("div");
+    let b = document.createElement("div");
     b.className = "bubble " + (correct ? "correct" : "incorrect");
     scantron.appendChild(b);
   }
@@ -1723,15 +1723,15 @@ function formatSelectedSource(chunks){
   }
 
   function buildReportData(){
-    const wrong = state.history.filter(h => h.verdict !== "correct");
-    const topicMap = {};
+    let wrong = state.history.filter(h => h.verdict !== "correct");
+    let topicMap = {};
 
     wrong.forEach(h => {
-      const topic = h.topic || "Topic not identified";
-      const subtopic = h.subtopic || h.topic || "Specific subtopic not identified";
-      const sourceFile = h.sourceFile || "File not identified";
-      const page = h.sourcePage || "Not identified";
-      const sourceContent = h.sourceContent || "Source content not identified";
+      let topic = h.topic || "Topic not identified";
+      let subtopic = h.subtopic || h.topic || "Specific subtopic not identified";
+      let sourceFile = h.sourceFile || "File not identified";
+      let page = h.sourcePage || "Not identified";
+      let sourceContent = h.sourceContent || "Source content not identified";
 
       if (!topicMap[topic]) {
         topicMap[topic] = { topic, count: 0, subtopics: {} };
@@ -1748,15 +1748,15 @@ function formatSelectedSource(chunks){
         };
       }
 
-      const s = topicMap[topic].subtopics[subtopic];
+      let s = topicMap[topic].subtopics[subtopic];
       s.count += 1;
 
-      const sourceLabel = sourceFile + " — Page " + page;
+      let sourceLabel = sourceFile + " — Page " + page;
       if (!s.sources.includes(sourceLabel)) s.sources.push(sourceLabel);
       if (!s.sourceContents.includes(sourceContent)) s.sourceContents.push(sourceContent);
     });
 
-    const topics = Object.values(topicMap)
+    let topics = Object.values(topicMap)
       .map(t => {
         t.subtopics = Object.values(t.subtopics).sort((a,b) => b.count - a.count);
         return t;
@@ -1767,14 +1767,14 @@ function formatSelectedSource(chunks){
   }
 
   function renderReportCard(){
-    const total = state.score.total;
-    const correct = state.score.correct;
-    const pct = total ? Math.round((correct / total) * 100) : 0;
-    const grade = total
+    let total = state.score.total;
+    let correct = state.score.correct;
+    let pct = total ? Math.round((correct / total) * 100) : 0;
+    let grade = total
       ? (pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : "D")
       : "—";
 
-    const report = buildReportData();
+    let report = buildReportData();
     state.reportTopics = report.topics;
     state.reportGenerated = true;
 
@@ -1784,11 +1784,11 @@ function formatSelectedSource(chunks){
     reportCorrect.textContent = correct + " / " + total;
     reportWrong.textContent = report.wrong.length;
 
-    const totalSections=state.sourceChunks.length||0;
-    const coveredSections=(state.coveredSourceIds||[]).length;
-    const totalConcepts=(state.conceptOrder||[]).length;
-    const coveredConcepts=(state.conceptOrder||[]).map(id=>state.concepts[id]).filter(c=>c && c.attempts>0).length;
-    const coveragePct=totalConcepts?Math.round((coveredConcepts/totalConcepts)*100):0;
+    let totalSections=state.sourceChunks.length||0;
+    let coveredSections=(state.coveredSourceIds||[]).length;
+    let totalConcepts=(state.conceptOrder||[]).length;
+    let coveredConcepts=(state.conceptOrder||[]).map(id=>state.concepts[id]).filter(c=>c && c.attempts>0).length;
+    let coveragePct=totalConcepts?Math.round((coveredConcepts/totalConcepts)*100):0;
     reportCoverageSummary.innerHTML=
       '<strong>Concept coverage: '+coveredConcepts+' / '+totalConcepts+' important concepts ('+coveragePct+'%)</strong><br>'+
       '<span>Source sections discovered: '+coveredSections+' / '+totalSections+'. Reinforcement prioritizes concepts you missed or only partially mastered.</span>';
@@ -1845,19 +1845,19 @@ function formatSelectedSource(chunks){
       return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const margin = 42;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const contentWidth = pageWidth - margin * 2;
+    let { jsPDF } = window.jspdf;
+    let doc = new jsPDF({ unit: "pt", format: "a4" });
+    let margin = 42;
+    let pageWidth = doc.internal.pageSize.getWidth();
+    let pageHeight = doc.internal.pageSize.getHeight();
+    let contentWidth = pageWidth - margin * 2;
     let y = 48;
 
-    const total = state.score.total;
-    const correct = state.score.correct;
-    const pct = total ? Math.round((correct / total) * 100) : 0;
-    const grade = total ? (pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : "D") : "—";
-    const report = buildReportData();
+    let total = state.score.total;
+    let correct = state.score.correct;
+    let pct = total ? Math.round((correct / total) * 100) : 0;
+    let grade = total ? (pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : "D") : "—";
+    let report = buildReportData();
 
     function ensureSpace(h){
       if (y + h > pageHeight - 45) {
@@ -1869,7 +1869,7 @@ function formatSelectedSource(chunks){
     function addText(txt, x, width, size=10, leading=14, bold=false){
       doc.setFont("helvetica", bold ? "bold" : "normal");
       doc.setFontSize(size);
-      const lines = doc.splitTextToSize(String(txt || ""), width);
+      let lines = doc.splitTextToSize(String(txt || ""), width);
       ensureSpace(lines.length * leading + 5);
       doc.text(lines, x, y);
       y += lines.length * leading;
@@ -1948,7 +1948,7 @@ function formatSelectedSource(chunks){
       });
     }
 
-    const safeSubject = (state.subject || "study-report")
+    let safeSubject = (state.subject || "study-report")
       .replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
 
     doc.save((safeSubject || "study-report") + "-report-card.pdf");
