@@ -591,6 +591,7 @@
     sourceFiles: [],
     sourceChunks: [],
     sourceCursor: 0,
+    coveredSourceIds: [],
     images: [],
     subject: "",
     qType: "mixed",
@@ -905,40 +906,51 @@
 
   function selectSourceChunks(focus){
     if (!state.sourceChunks.length) return [];
-    const recent=state.history.slice(-5);
-    const recentPages=new Set(recent.map(h=>(h.sourceFile||"")+"||"+(h.sourcePage||"")));
-    const recentWords=new Set(recent.flatMap(h=>[
-      ...keywordSet(h.topic), ...keywordSet(h.subtopic),
-      ...keywordSet(h.sourceContent)
-    ]));
 
-    let best=null, bestScore=-Infinity;
-    const n=state.sourceChunks.length;
+    const recent = state.history.slice(-5);
+    const recentPages = new Set(
+      recent.map(h => (h.sourceFile || "") + "||" + (h.sourcePage || ""))
+    );
 
-    for(let offset=0; offset<n; offset++){
-      const idx=(state.sourceCursor+offset)%n;
-      const c=state.sourceChunks[idx];
-      const words=keywordSet(c.content);
-      let score=-offset*0.12;
-      let overlap=0;
-      recentWords.forEach(w=>{if(words.has(w)) overlap++;});
-      score -= overlap*0.35;
-      if(recentPages.has(c.file+"||"+c.page)) score-=5;
-      if(score>bestScore){bestScore=score;best={idx,c};}
-    }
+    // FIRST PASS: cover every source section before deliberately revisiting.
+    // The model is told to prioritize the most important/exam-worthy concept
+    // within the selected section. Once all sections have been touched, the
+    // system switches to reinforcement of important concepts.
+    const covered = new Set(state.coveredSourceIds || []);
+    const uncovered = state.sourceChunks.filter(c => !covered.has(c.id));
+    const pool = uncovered.length ? uncovered : state.sourceChunks;
 
-    const selected=[best.c];
-    state.sourceCursor=(best.idx+1)%n;
+    let best = null;
+    let bestScore = -Infinity;
+    const n = pool.length;
 
-    // Application questions get one adjacent section for context, but still
-    // far less material than the old "send the whole document" approach.
-    if(focus==="application" && n>1){
-      const next=state.sourceChunks[state.sourceCursor];
-      if(next && next.file===best.c.file){
-        selected.push(next);
-        state.sourceCursor=(state.sourceCursor+1)%n;
+    for (let offset = 0; offset < n; offset++) {
+      const c = pool[offset];
+      const globalIdx = state.sourceChunks.findIndex(x => x.id === c.id);
+
+      let score = -Math.abs(globalIdx - state.sourceCursor) * 0.12;
+
+      // Avoid immediately repeating a page once we enter reinforcement mode.
+      if (!uncovered.length && recentPages.has(c.file + "||" + c.page)) score -= 5;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = { idx: globalIdx, c };
       }
     }
+
+    const selected = [best.c];
+    state.sourceCursor = (best.idx + 1) % state.sourceChunks.length;
+
+    if (focus === "application" && state.sourceChunks.length > 1) {
+      const next = state.sourceChunks[state.sourceCursor];
+      // During coverage, adjacent context is useful, but don't accidentally
+      // mark it covered just because it was supplied as context.
+      if (next && next.file === best.c.file && next.id !== best.c.id) {
+        selected.push(next);
+      }
+    }
+
     return selected;
   }
 
@@ -957,6 +969,13 @@
   function pickFocus(){
     if (state.focus !== "mixed") return state.focus;
     return Math.random() < 0.5 ? "fact" : "application";
+  }
+
+  function pickApplicationStyle(){
+    // Application is intentionally a mix:
+    // 1) caselet-based application
+    // 2) direct application/diagnosis/decision question
+    return Math.random() < 0.5 ? "case" : "direct";
   }
 
   function normalizeQuestionText(s){
@@ -1013,6 +1032,7 @@
   async function generateQuestion(){
     const type=pickType();
     const focus=pickFocus();
+    const applicationStyle = focus === "application" ? pickApplicationStyle() : "none";
     const avoidList=state.askedTexts.slice(-4).map(q => String(q).slice(0, 140));
     state.askedConcepts=Array.isArray(state.askedConcepts)?state.askedConcepts:[];
 
@@ -1026,27 +1046,33 @@
 
     const sourceForQuestion=formatSelectedSource(selected);
 
+    const coveragePhase = (state.coveredSourceIds || []).length < state.sourceChunks.length;
     const system=
       "You write one quiz question strictly from the SOURCE SECTIONS provided. "+
       "Do not use outside knowledge. Respond with ONLY valid JSON. "+
       "Use the exact FILE and PAGE/SLIDE metadata from the source section that supports the question. Never guess a page. "+
-      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row.";
+      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row. "+
+      (coveragePhase
+        ? "COVERAGE PHASE: prioritize the most important, exam-worthy concept in this source section that has not yet been tested. Do not waste the first-pass question on a minor detail if the section contains a more central concept. "
+        : "REINFORCEMENT PHASE: all source sections have been touched once, so now prioritize important/high-yield concepts that deserve additional testing, especially concepts previously answered incorrectly. ");
 
     let schema;
     if(type==="mcq"){
-      schema='Return JSON: {"type":"mcq","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application: 2-4 sentence mini-case; otherwise empty string","question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"one short sentence"}. Exactly 4 options, one correct. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
+      schema='Return JSON: {"type":"mcq","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application case-style only: 2-4 sentence mini-case; for direct application, empty string; otherwise empty string","question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"one short sentence"}. Exactly 4 options, one correct. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
     }else{
-      schema='Return JSON: {"type":"subjective","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application: 2-4 sentence mini-case; otherwise empty string","question":"...","idealAnswer":"1-3 sentence model answer","explanation":"one short sentence"}. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
+      schema='Return JSON: {"type":"subjective","category":"'+focus+'","topic":"broad topic","subtopic":"specific concept/case/mechanism tested","sourceFile":"exact FILE from supporting source section","sourcePage":"exact PAGE/SLIDE from supporting source section","sourceContent":"short label of exact source content used","scenario":"for application case-style only: 2-4 sentence mini-case; for direct application, empty string; otherwise empty string","question":"...","idealAnswer":"1-3 sentence model answer","explanation":"one short sentence"}. Application questions MUST use a mini-case and test transfer of a concept to a new situation.';
     }
 
     const focusInstruction=focus==="fact"
       ? "FACT MODE: test recall of a specific fact, term, detail, or relationship in the source."
-      : "APPLICATION MODE: create a short 2-4 sentence caselet involving realistic entities, decisions, actions, or outcomes, then ask the student to apply the source concept. For example, if the source covers alliance governance, describe firms creating a joint steering committee and functional committees, then ask which governance mechanism is illustrated. Do not merely reword a fact from the notes.";
+      : (applicationStyle === "case"
+        ? "APPLICATION MODE — CASE: create a short 2-4 sentence mini-case involving realistic entities, decisions, actions, or outcomes, then ask the student to apply the source concept. For example, if the source covers alliance governance, describe firms creating a joint steering committee and functional committees, then ask which governance mechanism is illustrated. Do not merely reword a fact from the notes."
+        : "APPLICATION MODE — DIRECT: do NOT create a caselet. Ask the student to apply, diagnose, compare, choose, or predict using a concept from the source. The question should require reasoning beyond repeating a definition. For example, ask which governance mechanism would be most appropriate given a stated alliance-management need, or what consequence follows from a stated strategic choice.");
 
     const diversity=
       (avoidList.length ? "Do not repeat or closely resemble:\n- "+avoidList.join("\n- ")+"\n":"")+
       (recentConcepts.length ? "\nRECENT CONCEPTS — avoid these:\n"+recentConcepts.join("\n")+"\n":"")+
-      "\nChoose a genuinely different subtopic and angle. For application questions also change the case setup, entities, decision and application angle.";
+      "\nChoose a genuinely different subtopic and angle. For application questions, alternate between CASE and DIRECT application where possible, and vary the reasoning angle. Do not make every application question a case study.";
 
     const prompt=
       "SUBJECT: "+(state.subject||"not specified")+"\n"+
@@ -1066,6 +1092,7 @@
       parsed.sourcePage=parsed.sourcePage||selected[0].page;
       parsed.sourceContent=parsed.sourceContent||parsed.subtopic||"Source content not identified";
       parsed.scenario=parsed.scenario||"";
+      parsed._sourceChunkIds = selected.map(c => c.id);
       last=parsed;
       if(!isTooSimilarToRecent(parsed)) return parsed;
     }
@@ -1107,6 +1134,7 @@
     state.history = [];
     state.askedTexts = [];
     state.askedConcepts = [];
+    state.coveredSourceIds = [];
     state.score = { correct: 0, total: 0 };
     buildSourceIndex();
 
@@ -1149,13 +1177,19 @@
         sourceFile: q.sourceFile,
         sourcePage: q.sourcePage
       });
+
+      if (!Array.isArray(state.coveredSourceIds)) state.coveredSourceIds = [];
+      (q._sourceChunkIds || []).forEach(id => {
+        if (!state.coveredSourceIds.includes(id)) state.coveredSourceIds.push(id);
+      });
+
       renderQuestion(q);
     } catch (err) {
       // Never hide the provider's real error. This makes auth, CORS, model,
       // quota and request-format problems diagnosable.
       const message = err && err.message
         ? err.message
-        : "Unknown Cerebras error. Check your key, model, quota, and connection.";
+        : "Unknown AI engine error. The app will automatically rotate through the configured providers.";
       renderError(message, loadNextQuestion);
     }
   }
@@ -1273,7 +1307,7 @@
       submitBtn.disabled = false;
       submitBtn.textContent = "Submit answer";
       const slot = document.getElementById("feedbackSlot");
-      slot.innerHTML = '<div class="feedback incorrect"><span class="verdict">Grading failed</span>Couldn\'t reach the grader — check your Cerebras key, quota, and connection.</div>';
+      slot.innerHTML = '<div class="feedback incorrect"><span class="verdict">Grading failed</span>Couldn\'t reach the grader — the AI pool may be temporarily busy. Try again.</div>';
     }
   }
 
