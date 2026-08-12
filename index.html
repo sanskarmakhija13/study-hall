@@ -113,6 +113,26 @@
     padding:8px 14px; cursor:pointer; user-select:none;
   }
   .file-btn:hover{ background:#E9F2F9; }
+  .secondary-upload{
+    background:#FFFFFF !important;
+    color:var(--ink) !important;
+    border-color:#9FBBD0 !important;
+  }
+  .secondary-upload:hover{ background:#EAF3FA !important; }
+  .upload-help{
+    margin-top:7px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--pencil-faint);
+  }
+  @media(max-width:560px){
+    .upload-row{ align-items:stretch; }
+    .upload-row .file-btn{
+      width:100%;
+      justify-content:center;
+      text-align:center;
+    }
+  }
   input[type="file"]{ display:none; }
   .file-status{ font-size:12px; color:var(--pencil); font-family:'IBM Plex Mono', monospace; line-height:1.5; }
 
@@ -546,9 +566,15 @@
       <textarea id="sourceText" rows="8" placeholder="Paste the material you want to be quizzed on..."></textarea>
 
       <div class="upload-row">
-        <label class="file-btn" for="fileInput">Upload files — PDF, Word, PowerPoint, TXT, or screenshots</label>
-        <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.pptx,.png,.jpg,.jpeg,.webp" multiple>
+        <label class="file-btn" for="fileInput">Upload documents</label>
+        <input type="file" id="fileInput"
+          accept=".pdf,.docx,.pptx,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          multiple>
+
+        <label class="file-btn secondary-upload" for="imageInput">Add photos</label>
+        <input type="file" id="imageInput" accept="image/*" multiple>
       </div>
+      <div class="upload-help">PDF · Word · PowerPoint · TXT &nbsp;|&nbsp; Photos/screenshots</div>
       <div class="file-status" id="fileStatus"></div>
       <div class="file-chips" id="fileChips"></div>
     </div>
@@ -706,6 +732,7 @@
   let subjectInput = document.getElementById("subjectInput");
   let sourceText = document.getElementById("sourceText");
   let fileInput = document.getElementById("fileInput");
+  let imageInput = document.getElementById("imageInput");
   let fileStatus = document.getElementById("fileStatus");
   let fileChips = document.getElementById("fileChips");
   let startBtn = document.getElementById("startBtn");
@@ -759,6 +786,14 @@
   fileInput.addEventListener("change", async () => {
     let files = [...fileInput.files];
     fileInput.value = "";
+    for (let file of files) {
+      await handleFile(file);
+    }
+  });
+
+  imageInput.addEventListener("change", async () => {
+    let files = [...imageInput.files];
+    imageInput.value = "";
     for (let file of files) {
       await handleFile(file);
     }
@@ -910,7 +945,7 @@
 
     if (!res.ok) {
       throw new Error(
-        data.error || ("AI engine error " + res.status + ". Try again.")
+        (data.error ? "BACKEND: " + data.error : "AI engine error " + res.status + ". Try again.")
       );
     }
 
@@ -1248,6 +1283,82 @@ function formatSelectedSource(chunks){
     return false;
   }
 
+  function normalizedWords(s){
+    return String(s||"").toLowerCase().replace(/[^a-z0-9\s]/g," ")
+      .split(/\s+/).filter(Boolean);
+  }
+
+  function phraseOverlap(a,b){
+    let A=normalizedWords(a);
+    let B=normalizedWords(b);
+    if(A.length<3 || B.length<3) return 0;
+
+    let longest=0;
+    for(let i=0;i<A.length;i++){
+      for(let j=0;j<B.length;j++){
+        let k=0;
+        while(i+k<A.length && j+k<B.length && A[i+k]===B[j+k]) k++;
+        if(k>longest) longest=k;
+      }
+    }
+    return longest;
+  }
+
+  function validateGeneratedQuestion(q, type, focus){
+    if(!q || typeof q!=="object") return "The AI response was not a question object.";
+    if(typeof q.question!=="string" || q.question.trim().length<10) return "The AI response did not contain a usable question.";
+    if(!q.topic || !q.subtopic || !q.sourceFile || !q.sourcePage) return "The AI response is missing topic or source metadata.";
+
+    if(type==="mcq"){
+      if(!Array.isArray(q.options) || q.options.length!==4) return "The AI did not return exactly four answer options.";
+      if(q.options.some(x=>typeof x!=="string" || !x.trim())) return "One or more answer options were malformed.";
+      if(!Number.isInteger(q.correctIndex) || q.correctIndex<0 || q.correctIndex>3) return "The AI returned an invalid correct-answer index.";
+
+      let qText=q.question.trim();
+      let correct=q.options[q.correctIndex].trim();
+
+      // Do not allow the question stem to literally reveal the answer.
+      if(phraseOverlap(qText,correct)>=4 || qText.toLowerCase().includes(correct.toLowerCase())){
+        return "The question gives away the correct answer in its wording.";
+      }
+
+      // Distractors should be plausible and parallel rather than obvious by length/style.
+      let lengths=q.options.map(x=>normalizedWords(x).length);
+      let minLen=Math.min(...lengths), maxLen=Math.max(...lengths);
+      if(minLen>=2 && maxLen>minLen*3.5 && maxLen-minLen>=8){
+        return "The answer options are too uneven in length and may reveal the correct answer.";
+      }
+
+      let lowerOptions=q.options.map(x=>x.toLowerCase().trim());
+      if(new Set(lowerOptions).size!==4) return "The AI returned duplicate answer options.";
+      if(lowerOptions.some(x=>/^(all of the above|none of the above|a and b|both a and b)$/i.test(x))){
+        return "Avoid giveaway all/none-of-the-above options.";
+      }
+
+      // Do not make the correct option uniquely specific with the same phrase as the stem.
+      let stemWords=new Set(normalizedWords(qText).filter(w=>w.length>=5));
+      let correctWords=normalizedWords(correct).filter(w=>w.length>=5);
+      let shared=correctWords.filter(w=>stemWords.has(w)).length;
+      if(shared>=Math.max(3,Math.ceil(correctWords.length*0.65))){
+        return "The correct option repeats too much wording from the question.";
+      }
+    }
+
+    if(focus==="application"){
+      if(q.category!=="application") return "Application mode returned a non-application question.";
+      if(q.scenario && q.scenario.trim().length>0 && q.scenario.trim().split(/\s+/).length<15){
+        return "The application case is too thin to test actual application.";
+      }
+    }
+
+    if(focus==="fact" && q.category!=="fact"){
+      return "Fact mode returned a non-fact question.";
+    }
+
+    return null;
+  }
+
+
   async function generateQuestion(){
     let type=pickType();
     let focus=pickFocus();
@@ -1261,10 +1372,16 @@ function formatSelectedSource(chunks){
       " | outcome="+(h.verdict||"unknown")
     );
 
-    let plan=chooseQuestionTarget(focus);
+    let plan;
+    try {
+      plan=chooseQuestionTarget(focus);
+    } catch (plannerError) {
+      throw new Error("PLANNER: " + (plannerError?.message || "Unable to select the next source section."));
+    }
+
     let selected=Array.isArray(plan.selected) ? plan.selected.filter(Boolean) : [];
     let primary=plan.primary || selected[0];
-    if(!primary || !selected.length) throw new Error("No source sections were indexed. Re-upload or paste your study material.");
+    if(!primary || !selected.length) throw new Error("PLANNER: No source sections were indexed. Re-upload or paste your study material.");
 
     let sourceForQuestion=formatSelectedSource(selected);
     let primaryConcepts=getConceptsForChunk(primary.id);
@@ -1276,14 +1393,19 @@ function formatSelectedSource(chunks){
       "Use the exact FILE and PAGE/SLIDE metadata from the source section that supports the question. Never guess a page. "+
       "The quiz has a strict coverage policy: first discover important concepts in each source section, then test every important concept once, then reinforce weak concepts. "+
       "Do not spend reinforcement questions on a concept that the learner already knows well when another important concept is weak. "+
-      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row.";
+      "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row. "+
+      "Every question must require actual recall, understanding, comparison, diagnosis, application, or reasoning. "+
+      "The answer must NOT be explicitly stated, paraphrased, or strongly hinted by the wording of the question. "+
+      "Do not write questions where the student can identify the answer from a distinctive phrase, definition, option length, or obvious wording clue. "+
+      "For MCQs, make all four options plausible, parallel in specificity, and roughly comparable in length. Never make the correct answer the most detailed or obviously qualified option. "+
+      "Prefer questions that test whether the learner understands WHY, HOW, WHEN, WHICH consequence, trade-off, mechanism, or distinction—not questions that merely repeat a sentence from the source.";
 
     if(plan.phase==="DISCOVERY"){
-      system+=" This is a DISCOVERY call for a new source section. In addition to the question, return a compact inventory of the 3-6 most important/exam-worthy concepts from this section. Do not list trivial details.";
+      system+=" This is a DISCOVERY call for a new source section. Identify the 3-6 most important/exam-worthy concepts from this section and test the single most important concept first. Do not list trivial details. The question must still require the learner to think; do not copy a source sentence into the question.";
     }else if(plan.phase==="CONCEPT_COVERAGE"){
-      system+=" This is the CONCEPT COVERAGE phase. The target concept below has not yet been tested; test that concept specifically.";
+      system+=" This is the CONCEPT COVERAGE phase. The target concept below has not yet been tested; test that concept specifically. Prioritize conceptual clarity over trivia and do not reveal the answer in the stem.";
     }else{
-      system+=" This is the REINFORCEMENT phase. The target concept below should be chosen because of importance, previous errors/partial answers, or sufficient spacing since it was last tested.";
+      system+=" This is the REINFORCEMENT phase. The target concept below should be chosen because of importance, previous errors/partial answers, or sufficient spacing since it was last tested. Re-test the concept from a different angle and require reasoning, not memorized wording.";
     }
 
     let schema;
@@ -1309,7 +1431,7 @@ function formatSelectedSource(chunks){
     }
 
     let focusInstruction=focus==="fact"
-      ? "FACT MODE: test recall of a specific fact, term, detail, or relationship in the source."
+      ? "FACT MODE: test a specific fact, term, detail, or relationship, but phrase the question so the learner must distinguish, recall, infer a consequence, or recognize the correct relationship. Do not copy the definition or answer wording into the stem."
       : (applicationStyle==="case"
         ? "APPLICATION MODE — CASE: create a short 2-4 sentence mini-case, then ask the student to apply the target concept. This should be a realistic transfer problem, not a definition question."
         : "APPLICATION MODE — DIRECT: do NOT create a caselet. Ask the student to apply, diagnose, compare, choose, or predict using the target concept. Require reasoning beyond repeating a definition.");
@@ -1327,10 +1449,32 @@ function formatSelectedSource(chunks){
       "\n\nSOURCE SECTIONS:\n"+sourceForQuestion+"\n\n"+schema;
 
     let last=null;
+    let lastValidationError="";
     for(let attempt=0;attempt<3;attempt++){
-      let retry=attempt===0?"":"\nThe previous candidate was too similar. Keep the same target concept but use a meaningfully different question angle.";
-      let parsed=parseJsonLoose(await callAI(system,prompt+retry,false));
-      if(!parsed.question) throw new Error("Malformed question");
+      let retry="";
+      if(attempt>0){
+        retry=
+          "\nThe previous candidate failed a quality check: "+lastValidationError+
+          "\nGenerate a NEW candidate for the SAME target concept. "+
+          "It must require genuine thinking/conceptual clarity, must not reveal the answer in the wording, and must use plausible, parallel answer choices if it is an MCQ.";
+      }
+
+      let rawResponse;
+      try{
+        rawResponse=await callAI(system,prompt+retry,false);
+      }catch(providerError){
+        if(attempt<2){ lastValidationError="The previous AI request failed temporarily."; continue; }
+        throw providerError;
+      }
+
+      let parsed;
+      try{
+        parsed=parseJsonLoose(rawResponse);
+      }catch(parseError){
+        lastValidationError="The AI returned malformed JSON. Return ONLY valid JSON matching the requested schema.";
+        if(attempt<2) continue;
+        throw new Error("Malformed question response after automatic retries.");
+      }
 
       parsed.topic=parsed.topic||"Topic not identified";
       parsed.subtopic=parsed.subtopic||parsed.conceptName||parsed.topic||"Specific subtopic not identified";
@@ -1345,9 +1489,21 @@ function formatSelectedSource(chunks){
       parsed._phase=plan.phase;
       last=parsed;
 
-      if(!isTooSimilarToRecent(parsed)) return parsed;
+      let validationError=validateGeneratedQuestion(parsed,type,focus);
+      if(validationError){
+        lastValidationError=validationError;
+        continue;
+      }
+
+      if(isTooSimilarToRecent(parsed)){
+        lastValidationError="The candidate was too similar to a recent question.";
+        continue;
+      }
+
+      return parsed;
     }
-    return last;
+
+    throw new Error("Could not generate a high-quality question after automatic retries. Please try again.");
   }
 
 
@@ -1392,6 +1548,7 @@ function formatSelectedSource(chunks){
     state.questionNumber = 0;
     state.lastConceptId = null;
     state.score = { correct: 0, total: 0 };
+    startBtn.textContent = "Start quiz";
     buildSourceIndex();
     updateCoverageUI();
 
@@ -1838,141 +1995,363 @@ function formatSelectedSource(chunks){
   }
 
   async function downloadReport(){
-    if (!state.reportGenerated) renderReportCard();
+    if(!state.reportGenerated) renderReportCard();
 
-    if (!window.jspdf || !window.jspdf.jsPDF) {
+    if(!window.jspdf || !window.jspdf.jsPDF){
       alert("PDF generator is still loading. Please try again in a moment.");
       return;
     }
 
     let { jsPDF } = window.jspdf;
-    let doc = new jsPDF({ unit: "pt", format: "a4" });
+    let doc = new jsPDF({unit:"pt",format:"a4"});
     let margin = 42;
     let pageWidth = doc.internal.pageSize.getWidth();
     let pageHeight = doc.internal.pageSize.getHeight();
-    let contentWidth = pageWidth - margin * 2;
-    let y = 48;
+    let contentWidth = pageWidth - margin*2;
+    let y = 42;
+
+    // Study Hall blue/white visual system.
+    let BLUE = [21,91,138];
+    let BLUE_DARK = [18,59,93];
+    let BLUE_LIGHT = [237,246,251];
+    let BLUE_BORDER = [201,220,236];
+    let TEXT = [18,59,93];
+    let MUTED = [94,120,144];
+    let GREEN = [31,122,90];
+    let GREEN_LIGHT = [232,246,239];
+    let RED = [200,62,77];
+    let RED_LIGHT = [253,236,239];
+    let WHITE = [255,255,255];
+    let LIGHT = [247,250,253];
 
     let total = state.score.total;
     let correct = state.score.correct;
-    let pct = total ? Math.round((correct / total) * 100) : 0;
-    let grade = total ? (pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : "D") : "—";
+    let pct = total ? Math.round((correct/total)*100) : 0;
+    let grade = total ? (pct>=90?"A+":pct>=80?"A":pct>=70?"B":pct>=60?"C":"D") : "-";
     let report = buildReportData();
 
+    function addPageNumber(){
+      let page = doc.internal.getNumberOfPages();
+      doc.setDrawColor(...BLUE_BORDER);
+      doc.line(margin,pageHeight-31,pageWidth-margin,pageHeight-31);
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text("Study Hall",margin,pageHeight-18);
+      doc.text("Page "+page,pageWidth-margin,pageHeight-18,{align:"right"});
+    }
+
+    function newPage(){
+      addPageNumber();
+      doc.addPage();
+      y = 42;
+    }
+
     function ensureSpace(h){
-      if (y + h > pageHeight - 45) {
-        doc.addPage();
-        y = 48;
-      }
+      if(y+h > pageHeight-48) newPage();
     }
 
-    function addText(txt, x, width, size=10, leading=14, bold=false){
-      doc.setFont("helvetica", bold ? "bold" : "normal");
+    function roundRect(x,y0,w,h,fill,stroke,r=7){
+      doc.setFillColor(...fill);
+      doc.setDrawColor(...stroke);
+      doc.roundedRect(x,y0,w,h,r,r,"FD");
+    }
+
+    function wrappedLines(txt,width,size=10,bold=false){
+      doc.setFont("helvetica",bold?"bold":"normal");
       doc.setFontSize(size);
-      let lines = doc.splitTextToSize(String(txt || ""), width);
-      ensureSpace(lines.length * leading + 5);
-      doc.text(lines, x, y);
-      y += lines.length * leading;
+      return doc.splitTextToSize(String(txt||""),width);
     }
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.text("Study Hall — Report Card", margin, y);
-    y += 20;
+    function addWrapped(txt,x,width,size=10,leading=13,bold=false,color=TEXT){
+      doc.setFont("helvetica",bold?"bold":"normal");
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      let lines = doc.splitTextToSize(String(txt||""),width);
+      ensureSpace(lines.length*leading+3);
+      doc.text(lines,x,y);
+      y += lines.length*leading;
+    }
 
-    doc.setFont("helvetica", "normal");
+    function addSectionTitle(label){
+      ensureSpace(35);
+      doc.setFillColor(...BLUE);
+      doc.roundedRect(margin,y,contentWidth,24,5,5,"F");
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text(label,margin+12,y+16);
+      y += 35;
+    }
+
+    // ---------- Cover / header ----------
+    doc.setFillColor(...BLUE);
+    doc.rect(0,0,pageWidth,8,"F");
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(25);
+    doc.setTextColor(...BLUE_DARK);
+    doc.text("Study Hall",margin,y+16);
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("QUIZ REPORT",pageWidth-margin,y+15,{align:"right"});
+
+    y += 38;
+    doc.setDrawColor(...BLUE_BORDER);
+    doc.line(margin,y,pageWidth-margin,y);
+    y += 24;
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(17);
+    doc.setTextColor(...TEXT);
+    doc.text("Study Report Card",margin,y);
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MUTED);
+    doc.text(state.subject || "Study material",margin,y+17);
+
+    // Grade badge.
+    let gradeFill = pct>=70 ? GREEN_LIGHT : RED_LIGHT;
+    let gradeStroke = pct>=70 ? GREEN : RED;
+    roundRect(pageWidth-margin-76,y-7,76,42,gradeFill,gradeStroke,8);
+    doc.setFont("helvetica","bold");
     doc.setFontSize(10);
-    doc.text(state.subject || "Study material", margin, y);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Grade: " + grade, pageWidth - margin - 78, y);
-    y += 18;
+    doc.setTextColor(...gradeStroke);
+    doc.text("GRADE",pageWidth-margin-38,y+5,{align:"center"});
+    doc.setFontSize(21);
+    doc.text(grade,pageWidth-margin-38,y+26,{align:"center"});
+    y += 56;
 
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 22;
+    // Summary stat cards.
+    let gap = 10;
+    let cardW = (contentWidth-gap*2)/3;
+    let stats = [
+      {label:"SCORE",value:pct+"%",accent:BLUE},
+      {label:"CORRECT",value:correct+" / "+total,accent:GREEN},
+      {label:"NEEDS REVIEW",value:String(report.wrong.length),accent:RED}
+    ];
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.text("Score: " + pct + "%", margin, y);
-    doc.text("Correct: " + correct + " / " + total, margin + 150, y);
-    doc.text("Needs review: " + report.wrong.length, margin + 300, y);
-    y += 28;
+    stats.forEach((s,i)=>{
+      let x=margin+i*(cardW+gap);
+      roundRect(x,y,cardW,72,WHITE,BLUE_BORDER,7);
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text(s.label,x+12,y+16);
+      doc.setFontSize(20);
+      doc.setTextColor(...s.accent);
+      doc.text(s.value,x+12,y+47);
+    });
+    y += 90;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text("TOPICS TO STUDY", margin, y);
-    y += 18;
+    // Coverage summary.
+    let totalSections=state.sourceChunks.length||0;
+    let coveredSections=(state.coveredSourceIds||[]).length;
+    let totalConcepts=(state.conceptOrder||[]).length;
+    let coveredConcepts=(state.conceptOrder||[])
+      .map(id=>state.concepts[id])
+      .filter(c=>c && c.attempts>0).length;
 
-    if (!report.topics.length) {
-      addText("No topics require review.", margin, contentWidth);
-    } else {
-      report.topics.forEach(t => {
-        addText(t.topic + " (" + t.count + " wrong)", margin, contentWidth, 11, 15, true);
+    roundRect(margin,y,contentWidth,64,BLUE_LIGHT,BLUE_BORDER,7);
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...BLUE_DARK);
+    doc.text("COVERAGE",margin+12,y+17);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT);
+    doc.text(
+      "Sections discovered: "+coveredSections+" / "+totalSections+
+      "    |    Important concepts tested: "+coveredConcepts+" / "+totalConcepts,
+      margin+12,y+36
+    );
+    doc.setDrawColor(...BLUE_BORDER);
+    doc.line(margin+12,y+48,pageWidth-margin-12,y+48);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text(
+      coveredConcepts===totalConcepts && totalConcepts>0
+        ? "All tracked concepts were covered; reinforcement focused on weak areas."
+        : "First-pass coverage prioritizes important concepts before reinforcement.",
+      margin+12,y+58
+    );
+    y += 82;
 
-        t.subtopics.forEach(s => {
-          addText("Specific subtopic: " + s.name, margin + 12, contentWidth - 12, 10, 14, true);
-          addText(
-            "Source: " + (s.sources.join("; ") || "File/page not identified") +
-            " — " + (s.sourceContents.join("; ") || "Source content not identified"),
-            margin + 12, contentWidth - 12, 9.5, 13
+    // ---------- Topics ----------
+    addSectionTitle("TOPICS TO STUDY");
+
+    if(!report.topics.length){
+      roundRect(margin,y,contentWidth,48,BLUE_LIGHT,BLUE_BORDER,6);
+      addWrapped("No topics require review - excellent work.",margin+12,contentWidth-24,10.5,14,true,GREEN);
+      y += 58;
+    }else{
+      report.topics.forEach(t=>{
+        let topicHeight = 26 + t.subtopics.length*48 + 10;
+        ensureSpace(Math.min(topicHeight,160));
+
+        let topicTop=y;
+        roundRect(margin,topicTop,contentWidth,26,BLUE_DARK,BLUE_DARK,6);
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(...WHITE);
+        doc.text(t.topic,margin+12,topicTop+17);
+
+        let countText=t.count+" wrong";
+        doc.setFontSize(8.5);
+        doc.text(countText,pageWidth-margin-12,topicTop+17,{align:"right"});
+        y += 35;
+
+        t.subtopics.forEach((s,idx)=>{
+          ensureSpace(54);
+
+          let boxH=42;
+          roundRect(margin+8,y,contentWidth-16,boxH,LIGHT,BLUE_BORDER,5);
+
+          doc.setFont("helvetica","bold");
+          doc.setFontSize(9.2);
+          doc.setTextColor(...TEXT);
+          let subLines=doc.splitTextToSize(
+            s.name,
+            contentWidth-38
           );
-          y += 4;
+          doc.text(subLines.slice(0,2),margin+18,y+14);
+
+          doc.setFont("helvetica","normal");
+          doc.setFontSize(8.2);
+          doc.setTextColor(...MUTED);
+          let sourceText="Source: "+(s.sources.join("; ")||"File/page not identified");
+          let sourceLines=doc.splitTextToSize(sourceText,contentWidth-38);
+          doc.text(sourceLines.slice(0,2),margin+18,y+29);
+
+          y += boxH+7;
         });
-        y += 6;
+
+        y += 7;
       });
     }
 
-    ensureSpace(30);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text("QUESTIONS YOU GOT WRONG", margin, y);
-    y += 20;
+    // ---------- Wrong answers ----------
+    addSectionTitle("QUESTIONS YOU GOT WRONG");
 
-    if (!report.wrong.length) {
-      addText("Perfect round — no incorrect answers.", margin, contentWidth);
-    } else {
-      report.wrong.forEach((h, i) => {
-        addText("Q" + (i + 1) + ". " + h.question, margin, contentWidth, 10.5, 14, true);
-        if (h.scenario) addText("Case: " + h.scenario, margin + 10, contentWidth - 10);
-        addText("Your answer: " + (h.userAnswer || "No answer"), margin + 10, contentWidth - 10);
-        addText("Correct / model answer: " + (h.correctAnswer || "Not available"), margin + 10, contentWidth - 10);
-        addText("What you got wrong: " + (h.subtopic || h.topic || "Not identified"), margin + 10, contentWidth - 10);
-        addText(
-          "Source: " + (h.sourceFile || "File not identified") + " — Page " + (h.sourcePage || "Not identified") +
-          " — " + (h.sourceContent || "Source content not identified"),
-          margin + 10, contentWidth - 10
-        );
-        addText("Broad topic: " + (h.topic || "Not identified"), margin + 10, contentWidth - 10);
-        if (h.explanation) addText("Explanation: " + h.explanation, margin + 10, contentWidth - 10);
-        y += 10;
+    if(!report.wrong.length){
+      roundRect(margin,y,contentWidth,54,GREEN_LIGHT,BLUE_BORDER,6);
+      addWrapped("Perfect round - there are no incorrect answers to review.",margin+12,contentWidth-24,10.5,14,true,GREEN);
+      y += 65;
+    }else{
+      report.wrong.forEach((h,i)=>{
+        // Question header
+        let questionLines=wrappedLines("Q"+(i+1)+". "+h.question,contentWidth-24,10.5,true);
+        let baseH=35+questionLines.length*14;
+        if(h.scenario) baseH+=34;
+        baseH+=120;
+        ensureSpace(Math.min(baseH,210));
+
+        let start=y;
+        let borderColor=RED;
+        roundRect(margin,start,contentWidth,Math.min(baseH,360),WHITE,BLUE_BORDER,7);
+
+        // Q badge
+        doc.setFillColor(...RED);
+        doc.roundedRect(margin+10,start+10,32,20,4,4,"F");
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(9);
+        doc.setTextColor(...WHITE);
+        doc.text("Q"+(i+1),margin+26,start+24,{align:"center"});
+
+        // Question
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(...TEXT);
+        doc.text(questionLines,margin+52,start+24);
+        let cursor=start+28+questionLines.length*14;
+
+        // Case
+        if(h.scenario){
+          cursor += 8;
+          roundRect(margin+12,cursor,contentWidth-24,38,BLUE_LIGHT,BLUE_BORDER,5);
+          doc.setFont("helvetica","bold");
+          doc.setFontSize(7.5);
+          doc.setTextColor(...BLUE);
+          doc.text("CASE",margin+20,cursor+12);
+          doc.setFont("helvetica","normal");
+          doc.setFontSize(8.4);
+          doc.setTextColor(...TEXT);
+          let caseLines=doc.splitTextToSize(h.scenario,contentWidth-46);
+          doc.text(caseLines.slice(0,2),margin+20,cursor+25);
+          cursor += 46;
+        }else{
+          cursor += 7;
+        }
+
+        function answerBox(label,value,fill,stroke,labelColor){
+          let lines=doc.splitTextToSize(String(value||"Not available"),contentWidth-44);
+          let h=24+Math.min(lines.length,3)*12;
+          roundRect(margin+12,cursor,contentWidth-24,h,fill,stroke,5);
+          doc.setFont("helvetica","bold");
+          doc.setFontSize(7.5);
+          doc.setTextColor(...labelColor);
+          doc.text(label,margin+20,cursor+12);
+          doc.setFont("helvetica","normal");
+          doc.setFontSize(8.8);
+          doc.setTextColor(...TEXT);
+          doc.text(lines.slice(0,3),margin+20,cursor+26);
+          cursor+=h+6;
+        }
+
+        answerBox("YOUR ANSWER",h.userAnswer||"No answer",RED_LIGHT,RED,RED);
+        answerBox("CORRECT / MODEL ANSWER",h.correctAnswer||"Not available",GREEN_LIGHT,GREEN,GREEN);
+
+        let detail="What you got wrong: "+(h.subtopic||h.topic||"Not identified");
+        if(h.sourceFile){
+          detail+="\nSource: "+h.sourceFile+" - Page "+(h.sourcePage||"Not identified");
+        }
+        if(h.sourceContent){
+          detail+="\nSource content: "+h.sourceContent;
+        }
+        if(h.explanation){
+          detail+="\nExplanation: "+h.explanation;
+        }
+
+        let detailLines=doc.splitTextToSize(detail,contentWidth-44);
+        let detailH=Math.min(120,18+detailLines.slice(0,7).length*11.5);
+        roundRect(margin+12,cursor,contentWidth-24,detailH,LIGHT,BLUE_BORDER,5);
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(8.4);
+        doc.setTextColor(...MUTED);
+        doc.text(detailLines.slice(0,7),margin+20,cursor+14);
+
+        y=cursor+detailH+16;
       });
     }
 
-    let safeSubject = (state.subject || "study-report")
-      .replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+    // Final footer on the last page.
+    addPageNumber();
 
-    doc.save((safeSubject || "study-report") + "-report-card.pdf");
+    let safeSubject=(state.subject||"study-report")
+      .replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+
+    doc.save((safeSubject||"study-report")+"-report-card.pdf");
   }
+
+
 
   function showResults(){
     renderReportCard();
     showScreen("results");
   }
 
-  retakeBtn.addEventListener("click", async () => {
-    state.history = [];
-    state.askedTexts = [];
-    state.askedConcepts = [];
-    state.sourceFiles = [];
-    state.sourceChunks = [];
-    state.sourceCursor = 0;
-    state.reportTopics = [];
-    state.reportGenerated = false;
-    state.score = { correct: 0, total: 0 };
-    updateScoreUI();
-    scantron.innerHTML = "";
-    showScreen("quiz");
-    await loadNextQuestion();
+  retakeBtn.addEventListener("click", () => {
+    // Keep the uploaded/pasted material and let the student change
+    // question type, focus, and difficulty before starting a fresh round.
+    setupError.classList.add("hidden");
+    startBtn.textContent = "Start new round";
+    fileStatus.textContent = state.sourceFiles.length
+      ? state.sourceFiles.length + " source file(s) loaded — material kept for this round."
+      : (sourceText.value.trim() ? "Source material kept for this round." : "");
+    showScreen("setup");
   });
 
   downloadReportBtn.addEventListener("click", downloadReport);
@@ -1982,7 +2361,11 @@ function formatSelectedSource(chunks){
     subjectInput.value = "";
     fileStatus.textContent = "";
     state.images = [];
+    state.sourceFiles = [];
+    state.sourceChunks = [];
+    state.sourceCursor = 0;
     renderFileChips();
+    startBtn.textContent = "Start quiz";
     showScreen("setup");
   });
 
