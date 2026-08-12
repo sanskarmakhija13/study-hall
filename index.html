@@ -2215,8 +2215,41 @@ function formatSelectedSource(chunks){
 
     if(focus==="application"){
       if(q.category!=="application") return "Application mode returned a non-application question.";
-      if(q.scenario && q.scenario.trim().length>0 && q.scenario.trim().split(/\s+/).length<15){
-        return "The application case is too thin to test actual application.";
+
+      let appText=(String(q.question||"")+" "+String(q.scenario||"")).toLowerCase();
+      let metaPatterns=[
+        /which (slide|page|section|part) (of|in|from) (the )?(deck|document|notes)/,
+        /(which|what) (slide|page|section) (should|contains|has)/,
+        /(where|what part) .* (deck|document|notes)/,
+        /(consult|look at|refer to) .* (deck|slide|page)/,
+        /(range|number) of sessions .* (included|covered)/,
+        /(what|which) .* (exam map|scope of the deck|deck's scope)/
+      ];
+      if(metaPatterns.some(r=>r.test(appText))){
+        return "Application question tests document navigation or study instructions instead of applying a substantive concept.";
+      }
+
+      let weakAppPatterns=[
+        /^a student .* wants to understand/,
+        /wants to know which (topics|concepts)/,
+        /which part of the deck/,
+        /which slide/,
+        /what should (they|the student) consult/
+      ];
+      if(weakAppPatterns.some(r=>r.test(appText))){
+        return "Application context is generic study guidance rather than a substantive transfer problem.";
+      }
+
+      let actionWords=/(decide|diagnose|recommend|choose|predict|explain|evaluate|assess|respond|design|prioriti[sz]e|negotiate|allocate|identify the cause|determine|what should .* do|which action)/i;
+      if(!actionWords.test(q.question)){
+        return "Application question does not require a meaningful decision, diagnosis, prediction, explanation, or other transfer of the concept.";
+      }
+      if(q.scenario && q.scenario.trim().length>0){
+        let words=q.scenario.trim().split(/\s+/);
+        let sentences=q.scenario.trim().split(/[.!?]+/).filter(Boolean);
+        if(words.length<25 || sentences.length<2){
+          return "The application case is too thin to test actual application.";
+        }
       }
     }
 
@@ -2263,11 +2296,14 @@ function formatSelectedSource(chunks){
       "The quiz has a strict coverage policy: first discover important concepts in each source section, then test every important concept once, then reinforce weak concepts. "+
       "Do not spend reinforcement questions on a concept that the learner already knows well when another important concept is weak. "+
       "Maximize diversity: do not repeat the same concept, case, partnership, example, fact, or reasoning path twice in a row. "+
-      "Every question must require actual recall, understanding, comparison, diagnosis, application, or reasoning. "+
+      "Every question must teach and test an underlying concept, mechanism, distinction, decision rule, cause/effect relationship, trade-off, or practical implication from the source. "+
+      "The student should need to understand the material to answer; the question must not be solvable merely by recognizing a phrase or scanning the source. "+
       "The answer must NOT be explicitly stated, paraphrased, or strongly hinted by the wording of the question. "+
       "Do not write questions where the student can identify the answer from a distinctive phrase, definition, option length, or obvious wording clue. "+
+      "Do NOT ask about document navigation or presentation metadata such as which slide/page/section contains something, the range of sessions covered, where to look in the deck, what the exam map says, or what a student should consult first. "+
+      "Do NOT turn a source heading, table of contents, agenda, scope statement, or study instruction into a quiz question unless the underlying substantive concept itself is being tested. "+
       "For MCQs, make all four options plausible, parallel in specificity, and roughly comparable in length. Never make the correct answer the most detailed or obviously qualified option. "+
-      "Prefer questions that test whether the learner understands WHY, HOW, WHEN, WHICH consequence, trade-off, mechanism, or distinction—not questions that merely repeat a sentence from the source.";
+      "Prefer questions that test WHY, HOW, WHEN, WHICH consequence, trade-off, mechanism, distinction, diagnosis, or choice under constraints—not questions that merely repeat a sentence from the source.";
 
     if(plan.phase==="DISCOVERY"){
       system+=" This is a DISCOVERY call for a new source section. Identify the 3-4 most important/exam-worthy concepts from this section and test the single most important concept first. Do not list trivial details. The question must still require the learner to think; do not copy a source sentence into the question.";
@@ -2300,10 +2336,10 @@ function formatSelectedSource(chunks){
     }
 
     let focusInstruction=focus==="fact"
-      ? "FACT MODE: test a specific fact, term, detail, or relationship, but phrase the question so the learner must distinguish, recall, infer a consequence, or recognize the correct relationship. Do not copy the definition or answer wording into the stem."
+      ? "FACT MODE: test a substantive fact, relationship, distinction, threshold, sequence, mechanism, or consequence that matters for understanding the topic. Avoid trivial metadata and document-navigation facts. Prefer a question where the learner must distinguish between closely related ideas or infer a consequence rather than merely recall a label."
       : (applicationStyle==="case"
-        ? "APPLICATION MODE — CASE: create a short 2-4 sentence mini-case, then ask the student to apply the target concept. This should be a realistic transfer problem, not a definition question."
-        : "APPLICATION MODE — DIRECT: do NOT create a caselet. Ask the student to apply, diagnose, compare, choose, or predict using the target concept. Require reasoning beyond repeating a definition.");
+        ? "APPLICATION MODE — CASE: create a realistic 2-4 sentence mini-case about a person, firm, manager, alliance, market, or other situation relevant to the source. Introduce a NEW situation rather than copying the source example. Give enough contextual facts and constraints that the learner must diagnose the situation and apply the TARGET CONCEPT to decide, explain, predict, or recommend. Do not ask where the answer appears in the deck."
+        : "APPLICATION MODE — DIRECT: make the question itself a contextual transfer problem. Give a concrete situation, decision, tension, or outcome and ask the learner to apply, diagnose, compare, choose, or predict using the TARGET CONCEPT. Do not turn it into a definition question or a question about what slide/page/deck to consult.");
 
     let diversity=
       (avoidList.length?"Do not repeat or closely resemble:\n- "+avoidList.join("\n- ")+"\n":"")+
@@ -2326,7 +2362,9 @@ function formatSelectedSource(chunks){
           "\nThe previous candidate failed a quality check: "+lastValidationError+
           "\nGenerate a NEW candidate for the SAME target concept. "+
           "Keep the question concise and return complete valid JSON. "+
-          "It must require genuine thinking/conceptual clarity, must not reveal the answer in the wording, and must use plausible, parallel answer choices if it is an MCQ.";
+          "It must teach/test the underlying concept through a substantive transfer problem, not document navigation or study guidance. "+
+          "If this is application mode, use a realistic situation or decision and require the learner to apply, diagnose, predict, compare, or recommend. "+
+          "Do not reveal the answer in the wording, and use plausible, parallel answer choices if it is an MCQ.";
       }
 
       let rawResponse;
