@@ -12,7 +12,7 @@
 // GEMINI_MODELS=gemini-2.5-flash-lite,gemini-2.5-flash
 
 let cursor = 0;
-const providerHealth = new Map();
+let providerHealth = new Map();
 
 function splitKeys(name) {
   return String(process.env[name] || "")
@@ -22,14 +22,14 @@ function splitKeys(name) {
 }
 
 function splitModels(name, fallback) {
-  const value = String(process.env[name] || "").trim();
+  let value = String(process.env[name] || "").trim();
   return value ? value.split(",").map(x => x.trim()).filter(Boolean) : fallback;
 }
 
 function providers() {
-  const list = [];
+  let list = [];
 
-  for (const key of splitKeys("CEREBRAS_API_KEYS")) {
+  for (let key of splitKeys("CEREBRAS_API_KEYS")) {
     list.push({
       provider: "cerebras",
       key,
@@ -37,23 +37,23 @@ function providers() {
     });
   }
 
-  const groqModels = splitModels("GROQ_MODELS", [
+  let groqModels = splitModels("GROQ_MODELS", [
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
     "llama-3.1-8b-instant"
   ]);
-  for (const key of splitKeys("GROQ_API_KEYS")) {
-    for (const model of groqModels) {
+  for (let key of splitKeys("GROQ_API_KEYS")) {
+    for (let model of groqModels) {
       list.push({ provider: "groq", key, model });
     }
   }
 
-  const geminiModels = splitModels("GEMINI_MODELS", [
+  let geminiModels = splitModels("GEMINI_MODELS", [
     "gemini-2.5-flash-lite",
     "gemini-2.5-flash"
   ]);
-  for (const key of splitKeys("GEMINI_API_KEYS")) {
-    for (const model of geminiModels) {
+  for (let key of splitKeys("GEMINI_API_KEYS")) {
+    for (let model of geminiModels) {
       list.push({ provider: "gemini", key, model });
     }
   }
@@ -62,7 +62,7 @@ function providers() {
 }
 
 async function callCerebras(item, system, userPrompt) {
-  const r = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+  let r = await fetch("https://api.cerebras.ai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -80,13 +80,13 @@ async function callCerebras(item, system, userPrompt) {
     })
   });
 
-  const data = await safeJson(r);
+  let data = await safeJson(r);
   if (!r.ok) throw providerError("Cerebras", r.status, data);
   return data?.choices?.[0]?.message?.content || "";
 }
 
 async function callGroq(item, system, userPrompt) {
-  const base = {
+  let base = {
     model: item.model,
     messages: [
       { role: "system", content: system },
@@ -119,7 +119,7 @@ async function callGroq(item, system, userPrompt) {
   // even though the request itself is valid. Retry that SAME provider/model
   // once without JSON mode; the system prompt still requires raw JSON and
   // the browser parser validates it.
-  const failedJsonGeneration =
+  let failedJsonGeneration =
     r.status === 400 &&
     (
       String(data?.error?.message || "").toLowerCase().includes("failed to validate json") ||
@@ -136,10 +136,10 @@ async function callGroq(item, system, userPrompt) {
 }
 
 async function callGemini(item, system, userPrompt) {
-  const url =
+  let url =
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(item.model)}:generateContent?key=${encodeURIComponent(item.key)}`;
 
-  const r = await fetch(url, {
+  let r = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -158,7 +158,7 @@ async function callGemini(item, system, userPrompt) {
     })
   });
 
-  const data = await safeJson(r);
+  let data = await safeJson(r);
   if (!r.ok) throw providerError("Gemini", r.status, data);
 
   return data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
@@ -170,13 +170,13 @@ async function safeJson(r) {
 }
 
 function providerError(name, status, data) {
-  const msg =
+  let msg =
     data?.error?.message ||
     data?.error?.status ||
     data?.message ||
     `HTTP ${status}`;
 
-  const e = new Error(`${name} ${status}: ${msg}`);
+  let e = new Error(`${name} ${status}: ${msg}`);
   e.status = status;
   e.provider = name;
   return e;
@@ -190,11 +190,11 @@ function providerId(item) {
   return `${item.provider}:${item.model}:${item.key.slice(-8)}`;
 }
 function isTemporarilyBlocked(item) {
-  const until = providerHealth.get(providerId(item));
+  let until = providerHealth.get(providerId(item));
   return until && until > Date.now();
 }
 function markProvider(item, err) {
-  const id=providerId(item);
+  let id=providerId(item);
   if([402,429].includes(err?.status)) providerHealth.set(id,Date.now()+5*60*1000);
   else if([401,403].includes(err?.status)) providerHealth.set(id,Date.now()+30*60*1000);
   else if([500,502,503,504].includes(err?.status)) providerHealth.set(id,Date.now()+30*1000);
@@ -206,7 +206,7 @@ async function handler(req, res) {
     return res.status(405).json({ error: "POST only." });
   }
 
-  const pool = providers();
+  let pool = providers();
   if (!pool.length) {
     return res.status(500).json({
       error:
@@ -214,9 +214,9 @@ async function handler(req, res) {
     });
   }
 
-  const body = req.body || {};
-  const system = String(body.system || "");
-  const userPrompt = String(body.userPrompt || "");
+  let body = req.body || {};
+  let system = String(body.system || "");
+  let userPrompt = String(body.userPrompt || "");
 
   if (!system || !userPrompt) {
     return res.status(400).json({ error: "Missing AI request content." });
@@ -229,13 +229,13 @@ async function handler(req, res) {
 
   // Try healthy providers in rotation. If every provider has a transient failure,
   // make one additional pass so users do not have to press Try again themselves.
-  const start = cursor++ % pool.length;
+  let start = cursor++ % pool.length;
   let lastError = null;
 
   for (let round=0; round<2; round++) {
     let attempted=0;
     for (let offset=0; offset<pool.length; offset++) {
-      const item=pool[(start+offset)%pool.length];
+      let item=pool[(start+offset)%pool.length];
       if(isTemporarilyBlocked(item)) continue;
       attempted++;
       try{
@@ -261,4 +261,15 @@ async function handler(req, res) {
   });
 }
 
-export default handler;
+async function safeHandler(req, res) {
+  try {
+    return await handler(req, res);
+  } catch (err) {
+    console.error("Study Hall API unhandled error:", err);
+    return res.status(500).json({
+      error: "Server-side quiz engine error: " + (err?.message || "Unknown error")
+    });
+  }
+}
+
+export default safeHandler;
