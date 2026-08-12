@@ -85,25 +85,51 @@ async function callCerebras(item, system, userPrompt) {
 }
 
 async function callGroq(item, system, userPrompt) {
-  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${item.key}`
-    },
-    body: JSON.stringify({
-      model: item.model,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.7,
-      max_completion_tokens: 900,
-      response_format: { type: "json_object" }
-    })
+  const base = {
+    model: item.model,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: userPrompt }
+    ],
+    temperature: 0.65,
+    max_completion_tokens: 900
+  };
+
+  async function request(body) {
+    return fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${item.key}`
+      },
+      body: JSON.stringify(body)
+    });
+  }
+
+  // First try Groq JSON mode.
+  let r = await request({
+    ...base,
+    response_format: { type: "json_object" }
   });
 
-  const data = await safeJson(r);
+  let data = await safeJson(r);
+
+  // Some Groq models occasionally return 400 "Failed to validate JSON"
+  // even though the request itself is valid. Retry that SAME provider/model
+  // once without JSON mode; the system prompt still requires raw JSON and
+  // the browser parser validates it.
+  const failedJsonGeneration =
+    r.status === 400 &&
+    (
+      String(data?.error?.message || "").toLowerCase().includes("failed to validate json") ||
+      String(data?.error?.code || "").toLowerCase().includes("failed_generation")
+    );
+
+  if (failedJsonGeneration) {
+    r = await request(base);
+    data = await safeJson(r);
+  }
+
   if (!r.ok) throw providerError("Groq", r.status, data);
   return data?.choices?.[0]?.message?.content || "";
 }
@@ -156,7 +182,7 @@ function providerError(name, status, data) {
 }
 
 function isRetryable(err) {
-  return [401, 403, 404, 408, 409, 429, 500, 502, 503, 504].includes(err?.status);
+  return [400, 401, 402, 403, 404, 408, 409, 429, 500, 502, 503, 504].includes(err?.status);
 }
 
 async function handler(req, res) {
@@ -218,7 +244,7 @@ async function handler(req, res) {
 
   return res.status(503).json({
     error:
-      "All configured AI providers are currently unavailable or rate-limited." +
+      "All configured AI providers are currently unavailable, rate-limited, or temporarily rejecting generation." +
       (lastError?.message ? ` Last error: ${lastError.message}` : "")
   });
 }
