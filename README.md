@@ -58,3 +58,15 @@ document, for each question.
   - **Direct application** — no caselet; the student must diagnose, compare, choose, predict, or apply a concept.
 - Groq JSON-generation failures are retried without JSON mode, then the provider pool can fall through to another provider/model.
 - HTTP 400/402/429 and other transient provider failures can trigger provider fallback.
+
+
+## Concept-level coverage and reinforcement
+
+The app now uses a token-efficient two-stage learning planner:
+
+1. The first question generated from a source section also returns a compact inventory of its 3–6 most important concepts. This avoids a separate full-document indexing call.
+2. The quiz then tests each important concept once.
+3. Only after concept coverage is complete does it switch to reinforcement.
+4. Reinforcement prioritizes higher-importance concepts, concepts answered incorrectly/partially, and concepts that have had more spacing since the last attempt.
+
+This deliberately favors **coverage first, reinforcement second**, while avoiding the token cost of a separate concept-indexing pass.
