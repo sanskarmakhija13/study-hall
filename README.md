@@ -45,3 +45,16 @@ widely. Otherwise strangers can consume your API quotas.
 
 The app deliberately sends only the selected source section(s), not the whole
 document, for each question.
+
+
+## Quiz-generation behavior
+
+- The browser indexes source pages locally.
+- The first pass prioritizes **coverage**: each source section is tested before deliberate reinforcement/repetition.
+- Within a section, the model is instructed to prioritize the most important/exam-worthy concept rather than minor details.
+- After coverage, the quiz enters reinforcement mode and prioritizes high-yield concepts, especially ones previously missed.
+- Application questions are a mix of:
+  - **Case application** — a short mini-case followed by an application question.
+  - **Direct application** — no caselet; the student must diagnose, compare, choose, predict, or apply a concept.
+- Groq JSON-generation failures are retried without JSON mode, then the provider pool can fall through to another provider/model.
+- HTTP 400/402/429 and other transient provider failures can trigger provider fallback.
