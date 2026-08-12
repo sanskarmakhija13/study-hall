@@ -75,7 +75,7 @@ async function callCerebras(item, system, userPrompt) {
         { role: "user", content: userPrompt }
       ],
       temperature: 0.7,
-      max_completion_tokens: 700,
+      max_completion_tokens: 550,
       response_format: { type: "json_object" }
     })
   });
@@ -93,7 +93,7 @@ async function callGroq(item, system, userPrompt) {
       { role: "user", content: userPrompt }
     ],
     temperature: 0.65,
-    max_completion_tokens: 700
+    max_completion_tokens: 550
   };
 
   async function request(body) {
@@ -152,7 +152,7 @@ async function callGemini(item, system, userPrompt) {
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 700,
+        maxOutputTokens: 550,
         responseMimeType: "application/json"
       }
     })
