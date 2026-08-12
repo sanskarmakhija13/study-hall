@@ -195,9 +195,13 @@ function isTemporarilyBlocked(item) {
 }
 function markProvider(item, err) {
   let id=providerId(item);
-  if([402,429].includes(err?.status)) providerHealth.set(id,Date.now()+5*60*1000);
-  else if([401,403].includes(err?.status)) providerHealth.set(id,Date.now()+30*60*1000);
-  else if([500,502,503,504].includes(err?.status)) providerHealth.set(id,Date.now()+30*1000);
+  // Keep cooldowns short because Vercel functions can recover between requests
+  // and provider limits/billing responses can be transient.
+  if(err?.status===429) providerHealth.set(id,Date.now()+45*1000);
+  else if(err?.status===402) providerHealth.set(id,Date.now()+20*1000);
+  else if(err?.status===401) providerHealth.set(id,Date.now()+90*1000);
+  else if(err?.status===403) providerHealth.set(id,Date.now()+120*1000);
+  else if([500,502,503,504].includes(err?.status)) providerHealth.set(id,Date.now()+15*1000);
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
@@ -232,7 +236,7 @@ async function handler(req, res) {
   let start = cursor++ % pool.length;
   let lastError = null;
 
-  for (let round=0; round<2; round++) {
+  for (let round=0; round<3; round++) {
     let attempted=0;
     for (let offset=0; offset<pool.length; offset++) {
       let item=pool[(start+offset)%pool.length];
@@ -251,13 +255,30 @@ async function handler(req, res) {
         if(!isRetryable(err)) break;
       }
     }
-    if(round===0 && attempted>0) await sleep(250);
+    if(round<2 && attempted>0) await sleep(200 + round*150);
   }
 
+  // A warm Vercel instance may have temporarily cooled every provider.
+  // Probe each configured provider once before giving up, so a transient 402/429
+  // does not force the learner to press Try Again manually.
+  for (let item of pool) {
+    try {
+      let content="";
+      if(item.provider==="cerebras") content=await callCerebras(item,system,userPrompt);
+      else if(item.provider==="groq") content=await callGroq(item,system,userPrompt);
+      else if(item.provider==="gemini") content=await callGemini(item,system,userPrompt);
+      if(content) return res.status(200).json({content,provider:item.provider,model:item.model});
+    } catch(err) {
+      lastError=err;
+      // Do not extend the cooldown during the final probe.
+    }
+  }
+
+  let detail=lastError?.message ? ` Last provider error: ${lastError.message}` : "";
   return res.status(503).json({
     error:
-      "All configured AI providers are currently unavailable, rate-limited, or temporarily rejecting generation." +
-      (lastError?.message ? ` Last error: ${lastError.message}` : "")
+      "All configured AI providers failed this request. The gateway tried every configured key/model multiple times." +
+      detail
   });
 }
 
