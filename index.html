@@ -1638,6 +1638,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1870,21 +1871,82 @@
     });
   }
 
+  // PDF extraction supports both normal text PDFs and scanned/image PDFs.
+  // For scanned pages, PDF.js renders the page and Tesseract OCR reads the image
+  // entirely in the browser. No OCR API quota is consumed.
+  let ocrWorkerPromise = null;
+
+  async function getOcrWorker(){
+    if(!window.Tesseract) throw new Error("OCR engine not loaded");
+    if(!ocrWorkerPromise){
+      ocrWorkerPromise = window.Tesseract.createWorker("eng", 1, {
+        logger: m => {
+          if(m && typeof m.progress === "number"){
+            fileStatus.textContent = "OCR: " + Math.round(m.progress * 100) + "%...";
+          }
+        }
+      });
+    }
+    return ocrWorkerPromise;
+  }
+
+  async function ocrPdfPage(page, fileName, pageNo){
+    let viewport = page.getViewport({scale: 1.5});
+    let canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    let ctx = canvas.getContext("2d", {willReadFrequently:true});
+    await page.render({canvasContext:ctx, viewport}).promise;
+
+    let worker = await getOcrWorker();
+    fileStatus.textContent = "OCR: " + fileName + " — page " + pageNo + "...";
+    let result = await worker.recognize(canvas);
+    return String(result?.data?.text || "").replace(/\s+\n/g,"\n").trim();
+  }
+
   async function extractPdfText(file){
     if (!window.pdfjsLib) throw new Error("pdf.js not loaded");
     let buf = await file.arrayBuffer();
     let doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
     let out = "";
     let maxPages = Math.min(doc.numPages, 40);
+    let scannedPages = 0;
+    let textPages = 0;
+
     for (let i = 1; i <= maxPages; i++) {
       let page = await doc.getPage(i);
       let content = await page.getTextContent();
-      let pageText = content.items.map(it => it.str).join(" ").trim();
-      if (pageText) {
+      let pageText = content.items.map(it => it.str || "").join(" ").trim();
+
+      // Normal PDF: use the embedded text layer — much faster than OCR.
+      if(pageText.length >= 20){
+        textPages++;
         out += "\n[DOCUMENT: " + file.name + " | PAGE " + i + "]\n" + pageText + "\n";
+      } else {
+        // Scanned/image PDF page: render + OCR it.
+        scannedPages++;
+        try {
+          let ocrText = await ocrPdfPage(page, file.name, i);
+          if(ocrText){
+            out += "\n[DOCUMENT: " + file.name + " | PAGE " + i + "]\n" + ocrText + "\n";
+          }
+        } catch(ocrErr) {
+          console.warn("OCR failed for", file.name, "page", i, ocrErr);
+          // Keep processing later pages rather than failing the entire upload.
+        }
       }
-      if (out.length > 24000) break;
+
+      // Keep the same source-size safety limit used by the question engine.
+      if (out.length > 30000) break;
     }
+
+    if(!out.trim()){
+      throw new Error("No readable text found. The PDF may contain unsupported image content or handwriting.");
+    }
+
+    fileStatus.textContent =
+      "Added " + file.name + " — " + textPages + " text page(s)" +
+      (scannedPages ? ", OCR processed " + scannedPages + " scanned page(s)." : ".");
     return out;
   }
 
