@@ -2494,7 +2494,7 @@ function formatSelectedSource(chunks){
 
     let last=null;
     let lastValidationError="";
-    for(let attempt=0;attempt<3;attempt++){
+    for(let attempt=0;attempt<2;attempt++){
       let retry="";
       if(attempt>0){
         retry=
@@ -2510,7 +2510,8 @@ function formatSelectedSource(chunks){
       try{
         rawResponse=await callAI(system,prompt+retry,false);
       }catch(providerError){
-        if(attempt<2){ lastValidationError="The previous AI request failed temporarily."; continue; }
+        // callAI already performs provider failover. Retrying it here
+        // would restart the entire provider pool and multiply latency.
         throw providerError;
       }
 
@@ -2519,7 +2520,7 @@ function formatSelectedSource(chunks){
         parsed=parseJsonLoose(rawResponse);
       }catch(parseError){
         lastValidationError="The AI returned malformed JSON. Return ONLY valid JSON matching the requested schema.";
-        if(attempt<2) continue;
+        if(attempt<1) continue;
         throw new Error("Malformed question response after automatic retries.");
       }
 
@@ -2958,7 +2959,7 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
     renderLoading();
     let lastError = null;
 
-    for(let attempt=0; attempt<2; attempt++){
+    for(let attempt=0; attempt<1; attempt++){
       try {
         let q = await generateQuestion();
         state.currentQuestion = q;
@@ -3008,7 +3009,8 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
         return;
       } catch(err) {
         lastError=err;
-        if(attempt===0) await new Promise(r=>setTimeout(r,250));
+        // No automatic second UI-level generation attempt.
+        // generateQuestion() already has one bounded retry.
       }
     }
 
