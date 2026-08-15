@@ -348,7 +348,7 @@ function sleep(ms) {
 async function fetchWithTimeout(
   url,
   options,
-  timeoutMs = 18_000
+  timeoutMs = 9_000
 ) {
   const controller =
     new AbortController();
@@ -595,106 +595,9 @@ async function callGroq(
   // ----------------------------------------------------------
   // GROQ JSON VALIDATION FAILURE
   // ----------------------------------------------------------
-  //
-  // We've seen Groq occasionally return 400 because the
-  // structured generation validator rejects an otherwise
-  // valid generation.
-  //
-  // Retry the SAME account once without response_format
-  // before abandoning that account.
-  // ----------------------------------------------------------
-
-  const errorText =
-    String(
-      data?.error?.message ||
-      ""
-    ).toLowerCase();
-
-  const errorCode =
-    String(
-      data?.error?.code ||
-      ""
-    ).toLowerCase();
-
-  const jsonGenerationFailure =
-    first.status === 400 &&
-    (
-      errorText.includes(
-        "failed to validate json"
-      ) ||
-
-      errorText.includes(
-        "failed_generation"
-      ) ||
-
-      errorCode.includes(
-        "failed_generation"
-      )
-    );
-
-
-  if (jsonGenerationFailure) {
-
-    const retry =
-      await fetchWithTimeout(
-        url,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            "Authorization":
-              `Bearer ${item.key}`
-          },
-
-          body: JSON.stringify({
-
-            model:
-              item.model,
-
-            messages: [
-              {
-                role: "system",
-                content: system
-              },
-
-              {
-                role: "user",
-                content:
-                  `${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON. Do not include markdown fences or commentary.`
-              }
-            ],
-
-            temperature:
-              0.4,
-
-            max_completion_tokens:
-              800
-          })
-        }
-      );
-
-    data =
-      await safeJson(retry);
-
-    if (!retry.ok) {
-      throw providerError(
-        "Groq",
-        retry.status,
-        data
-      );
-    }
-
-    return ensureContent(
-      "Groq",
-      data?.choices?.[0]
-        ?.message
-        ?.content
-    );
-  }
-
+  // Do not spend a second full network round-trip on the same
+  // account. The caller can fail over to another account/provider.
+  // This is intentionally a fast-fail path.
 
   // ----------------------------------------------------------
   // NORMAL GROQ ERROR
@@ -1041,8 +944,7 @@ async function callAI(
   userPrompt
 ) {
 
-  const groups =
-    getProviderGroups();
+  const groups = getProviderGroups();
 
   if (!groups.length) {
     throw new Error(
@@ -1050,165 +952,76 @@ async function callAI(
     );
   }
 
-  let lastError =
-    null;
-
-
-  // ==========================================================
-  // PROVIDER ORDER
-  // ==========================================================
-
-  for (
-    const group
-    of groups
-  ) {
-
-    console.log(
-      `[Study Hall] ${group.provider}: ${group.keys.length} account(s) configured`
-    );
-
-
-    // ========================================================
-    // ACCOUNT ORDER
-    // ========================================================
-
-    for (
-      let keyIndex = 0;
-      keyIndex < group.keys.length;
-      keyIndex++
-    ) {
-
-      const key =
-        group.keys[keyIndex];
-
-      const item = {
-        provider:
-          group.provider,
-
-        key,
-
-        model:
-          group.model
-      };
-
-
-      // ------------------------------------------------------
-      // TEMPORARY COOLDOWN
-      // ------------------------------------------------------
-
-      if (
-        isTemporarilyBlocked(
-          item
-        )
-      ) {
-
-        console.log(
-          `[Study Hall] ${group.provider} account ${keyIndex + 1}: cooldown`
-        );
-
-        continue;
-      }
-
-
-      // ------------------------------------------------------
-      // TRY ACCOUNT
-      // ------------------------------------------------------
-
-      try {
-
-        console.log(
-          `[Study Hall] Trying ${group.provider} account ${keyIndex + 1}/${group.keys.length}`
-        );
-
-        const content =
-          await callProvider(
-            item,
-            system,
-            userPrompt
-          );
-
-
-        console.log(
-          `[Study Hall] SUCCESS — ${group.provider} account ${keyIndex + 1}`
-        );
-
-
-        return {
-          content,
-
-          provider:
-            group.provider,
-
-          model:
-            group.model,
-
-          keyIndex:
-            keyIndex + 1
-        };
-
-      }
-
-
-      // ------------------------------------------------------
-      // ACCOUNT FAILED
-      // ------------------------------------------------------
-
-      catch (error) {
-
-        lastError =
-          error;
-
-        console.warn(
-          `[Study Hall] FAILED — ${group.provider} account ${keyIndex + 1}:`,
-          error?.message ||
-          error
-        );
-
-
-        markProvider(
-          item,
-          error
-        );
-
-
-        // IMPORTANT:
-        //
-        // NEVER immediately jump to another provider.
-        //
-        // Always try the next account belonging to
-        // the CURRENT provider first.
-        //
-
-        continue;
+  // Fast path: race one account from the first three configured
+  // providers. This avoids waiting through a slow/dead provider.
+  // Only three requests are started in parallel; the remaining
+  // accounts are used as a bounded fallback pool.
+  const candidates = [];
+  for (const group of groups) {
+    for (let i = 0; i < group.keys.length; i++) {
+      const item = { provider: group.provider, key: group.keys[i], model: group.model };
+      if (!isTemporarilyBlocked(item)) {
+        candidates.push({ item, keyIndex: i + 1 });
+        break;
       }
     }
-
-
-    console.warn(
-      `[Study Hall] All ${group.provider} accounts exhausted. Moving to next provider.`
-    );
+    if (candidates.length >= 3) break;
   }
 
+  const attempted = new Set();
+  let lastError = null;
 
-  // ==========================================================
-  // EVERYTHING FAILED
-  // ==========================================================
+  async function attempt(candidate) {
+    const { item, keyIndex } = candidate;
+    const id = accountId(item);
+    attempted.add(id);
+    console.log(`[Study Hall] Fast path: ${item.provider} account ${keyIndex}`);
+    try {
+      const content = await callProvider(item, system, userPrompt);
+      console.log(`[Study Hall] SUCCESS — ${item.provider} account ${keyIndex}`);
+      return { content, provider: item.provider, model: item.model, keyIndex };
+    } catch (error) {
+      lastError = error;
+      markProvider(item, error);
+      console.warn(`[Study Hall] FAILED — ${item.provider} account ${keyIndex}: ${error?.message || error}`);
+      throw error;
+    }
+  }
 
-  const error =
-    new Error(
-      "All configured AI providers are currently unavailable, rate-limited, or temporarily rejecting generation."
-    );
+  if (candidates.length) {
+    try {
+      return await Promise.any(candidates.map(attempt));
+    } catch (_) {
+      // Fall through to the remaining bounded pool.
+    }
+  }
 
-  error.status =
-    503;
+  // Fallback: one attempt per remaining healthy account, with the
+  // same short timeout. No nested retries here.
+  for (const group of groups) {
+    for (let keyIndex = 0; keyIndex < group.keys.length; keyIndex++) {
+      const item = { provider: group.provider, key: group.keys[keyIndex], model: group.model };
+      if (attempted.has(accountId(item)) || isTemporarilyBlocked(item)) continue;
 
-  error.lastProviderError =
-    lastError?.message ||
-    null;
+      try {
+        const content = await callProvider(item, system, userPrompt);
+        console.log(`[Study Hall] SUCCESS — fallback ${group.provider} account ${keyIndex + 1}`);
+        return { content, provider: group.provider, model: group.model, keyIndex: keyIndex + 1 };
+      } catch (error) {
+        lastError = error;
+        markProvider(item, error);
+        console.warn(`[Study Hall] FAILED — fallback ${group.provider} account ${keyIndex + 1}: ${error?.message || error}`);
+      }
+    }
+  }
 
+  const error = new Error(
+    "All configured AI providers are currently unavailable, rate-limited, or temporarily rejecting generation."
+  );
+  error.status = 503;
+  error.lastProviderError = lastError?.message || null;
   throw error;
 }
-
 
 // ============================================================
 // VERCEL HANDLER
