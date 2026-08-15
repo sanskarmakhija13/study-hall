@@ -1677,7 +1677,10 @@
     teachMode: false,
     teachCurrent: null,
     teachHistory: [],
-    teachConceptIds: []
+    teachConceptIds: [],
+    failedConceptAttempts: {},
+    exhaustedDuplicateConcepts: {},
+    quizExhausted: false
   };
 
   // ---------------- element refs ----------------
@@ -1872,9 +1875,73 @@
   }
 
   // PDF extraction supports both normal text PDFs and scanned/image PDFs.
-  // For scanned pages, PDF.js renders the page and Tesseract OCR reads the image
-  // entirely in the browser. No OCR API quota is consumed.
+  // OCR/text extraction results are cached in IndexedDB by the PDF's SHA-256 hash.
+  // This means re-uploading the same PDF (even after a refresh or rename) does NOT
+  // OCR it again. Cache versioning lets us invalidate old extraction logic safely.
+  const PDF_CACHE_DB = "study-hall-pdf-cache-v1";
+  const PDF_CACHE_STORE = "documents";
+  const PDF_CACHE_VERSION = 1;
   let ocrWorkerPromise = null;
+
+  function openPdfCache(){
+    return new Promise((resolve, reject)=>{
+      if(!window.indexedDB){
+        resolve(null);
+        return;
+      }
+      let req=indexedDB.open(PDF_CACHE_DB, 1);
+      req.onupgradeneeded=()=>{
+        let db=req.result;
+        if(!db.objectStoreNames.contains(PDF_CACHE_STORE)){
+          db.createObjectStore(PDF_CACHE_STORE, {keyPath:"key"});
+        }
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>resolve(null);
+    });
+  }
+
+  async function pdfCacheGet(key){
+    let db=await openPdfCache();
+    if(!db) return null;
+    return new Promise(resolve=>{
+      try{
+        let tx=db.transaction(PDF_CACHE_STORE,"readonly");
+        let req=tx.objectStore(PDF_CACHE_STORE).get(key);
+        req.onsuccess=()=>resolve(req.result||null);
+        req.onerror=()=>resolve(null);
+      }catch(e){ resolve(null); }
+    });
+  }
+
+  async function pdfCachePut(entry){
+    let db=await openPdfCache();
+    if(!db) return false;
+    return new Promise(resolve=>{
+      try{
+        let tx=db.transaction(PDF_CACHE_STORE,"readwrite");
+        tx.objectStore(PDF_CACHE_STORE).put(entry);
+        tx.oncomplete=()=>resolve(true);
+        tx.onerror=()=>resolve(false);
+        tx.onabort=()=>resolve(false);
+      }catch(e){ resolve(false); }
+    });
+  }
+
+  async function sha256Hex(buffer){
+    if(!window.crypto?.subtle) return null;
+    let digest=await crypto.subtle.digest("SHA-256", buffer);
+    return Array.from(new Uint8Array(digest))
+      .map(b=>b.toString(16).padStart(2,"0"))
+      .join("");
+  }
+
+  function rewriteCachedDocumentName(text, fileName){
+    return String(text||"").replace(
+      /\[DOCUMENT: [^\]\|]+ \| PAGE/g,
+      "[DOCUMENT: "+fileName+" | PAGE"
+    );
+  }
 
   async function getOcrWorker(){
     if(!window.Tesseract) throw new Error("OCR engine not loaded");
@@ -1906,7 +1973,20 @@
 
   async function extractPdfText(file){
     if (!window.pdfjsLib) throw new Error("pdf.js not loaded");
+
     let buf = await file.arrayBuffer();
+    let hash = await sha256Hex(buf);
+    let cacheKey = hash ? "pdf:"+hash+":v"+PDF_CACHE_VERSION : null;
+
+    if(cacheKey){
+      let cached=await pdfCacheGet(cacheKey);
+      if(cached && typeof cached.text==="string" && cached.text.trim()){
+        let cachedText=rewriteCachedDocumentName(cached.text,file.name);
+        fileStatus.textContent = "Loaded cached extraction for " + file.name + " — no OCR needed.";
+        return cachedText;
+      }
+    }
+
     let doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
     let out = "";
     let maxPages = Math.min(doc.numPages, 40);
@@ -1932,11 +2012,9 @@
           }
         } catch(ocrErr) {
           console.warn("OCR failed for", file.name, "page", i, ocrErr);
-          // Keep processing later pages rather than failing the entire upload.
         }
       }
 
-      // Keep the same source-size safety limit used by the question engine.
       if (out.length > 30000) break;
     }
 
@@ -1944,12 +2022,26 @@
       throw new Error("No readable text found. The PDF may contain unsupported image content or handwriting.");
     }
 
+    // Only cache a complete successful extraction. If the safety limit or page
+    // limit was reached, it is still safe to cache because the question engine
+    // intentionally uses the same bounded source size.
+    if(cacheKey){
+      await pdfCachePut({
+        key: cacheKey,
+        text: out,
+        fileSize: file.size,
+        pages: maxPages,
+        scannedPages,
+        textPages,
+        createdAt: Date.now()
+      });
+    }
+
     fileStatus.textContent =
       "Added " + file.name + " — " + textPages + " text page(s)" +
-      (scannedPages ? ", OCR processed " + scannedPages + " scanned page(s)." : ".");
+      (scannedPages ? ", OCR processed " + scannedPages + " scanned page(s). Cached for next time." : ". Cached for next time.");
     return out;
   }
-
   async function extractDocxText(file){
     if (!window.mammoth) throw new Error("mammoth not loaded");
     let buf = await file.arrayBuffer();
@@ -2219,7 +2311,15 @@
     // Phase 2: cover every tracked important concept once.
     let uncovered = state.conceptOrder
       .map(function(id){ return state.concepts[id]; })
-      .filter(function(c){ return c && c.attempts === 0; });
+      .filter(function(c){
+        return c && c.attempts === 0 && !state.exhaustedDuplicateConcepts[c.id] &&
+          (state.failedConceptAttempts[c.id]||0) < 2;
+      });
+
+    // A rejected candidate is not a reason to ask the learner to press
+    // "Try again". It is a signal to the planner to move to another
+    // untested concept. Only when every remaining concept is exhausted do we
+    // declare the question pool exhausted.
 
     if (uncovered.length) {
       let target = chooseBestConcept(uncovered, state.lastConceptId) || uncovered[0];
@@ -2237,6 +2337,23 @@
         target: target,
         phase: "CONCEPT_COVERAGE"
       };
+    }
+
+    // No untested concept can produce a sufficiently distinct question.
+    // This is a legitimate end-of-quiz condition, not a generation error.
+    let pendingAll = state.conceptOrder
+      .map(function(id){ return state.concepts[id]; })
+      .filter(function(c){ return c && c.attempts===0; });
+    if(pendingAll.length && !uncovered.length){
+      let exhausted = pendingAll.every(function(c){
+        return state.exhaustedDuplicateConcepts[c.id] || (state.failedConceptAttempts[c.id]||0) >= 2;
+      });
+      if(exhausted){
+        let err=new Error("No sufficiently distinct high-quality questions remain for the remaining concepts.");
+        err.code="QUIZ_EXHAUSTED";
+        err.phase="CONCEPT_COVERAGE";
+        throw err;
+      }
     }
 
     // Phase 3: adaptive reinforcement.
@@ -2321,30 +2438,19 @@ function formatSelectedSource(chunks){
     let recent = state.history.slice(-4);
     let recentAsked = state.askedTexts.slice(-3);
 
-    // Never ask the same specific subtopic/case consecutively.
-    let qSubtopic = String(q.subtopic || "").trim().toLowerCase();
-    let qSource = String(q.sourceContent || "").trim().toLowerCase();
-
+    // Same concept is NOT automatically a duplicate. Reinforcement is
+    // supposed to revisit the same concept from a different angle. The old
+    // rule rejected identical subtopics/source labels outright, which could
+    // make reinforcement impossible and could also reject legitimate
+    // first-pass questions that happen to share a source label.
     for (let h of recent) {
-      let sameSubtopic =
-        qSubtopic &&
-        h.subtopic &&
-        qSubtopic === String(h.subtopic).trim().toLowerCase();
-
-      let sameSource =
-        qSource &&
-        h.sourceContent &&
-        qSource === String(h.sourceContent).trim().toLowerCase();
-
-      if (sameSubtopic || sameSource) return true;
-
-      // Catch "same concept, different wording" even when the model gives
-      // slightly different labels.
-      if (questionSimilarity(q.question, h.question) >= 0.58) return true;
+      if (questionSimilarity(q.question, h.question) >= 0.78) return true;
+      if (phraseOverlap(q.question, h.question) >= 8) return true;
     }
 
     for (let oldQuestion of recentAsked) {
-      if (questionSimilarity(q.question, oldQuestion) >= 0.68) return true;
+      if (questionSimilarity(q.question, oldQuestion) >= 0.78) return true;
+      if (phraseOverlap(q.question, oldQuestion) >= 8) return true;
     }
 
     return false;
@@ -2487,6 +2593,7 @@ function formatSelectedSource(chunks){
     let applicationStyle=focus==="application" ? pickApplicationStyle() : "none";
     let avoidList=state.askedTexts.slice(-4).map(q=>String(q).slice(0,140));
     state.askedConcepts=Array.isArray(state.askedConcepts)?state.askedConcepts:[];
+    state.failedConceptAttempts=state.failedConceptAttempts||{};
 
     let recentConcepts=state.history.slice(-3).map(h=>
       "- "+(h.topic||"unknown")+" | "+(h.subtopic||"unknown")+
@@ -2580,7 +2687,7 @@ function formatSelectedSource(chunks){
       if(attempt>0){
         retry=
           "\nThe previous candidate failed a quality check: "+lastValidationError+
-          "\nGenerate a NEW candidate for the SAME target concept. "+
+          "\nGenerate a genuinely different question for the SAME target concept. Change the reasoning angle, scenario, decision context, or consequence being tested; do not merely paraphrase the previous wording. "+
           "Keep the question concise and return complete valid JSON. "+
           "It must teach/test the underlying concept through a substantive transfer problem, not document navigation or study guidance. "+
           "If this is application mode, use a realistic situation or decision and require the learner to apply the concept. Natural question forms such as which approach is most appropriate, what is most likely to happen, what best explains the outcome, or how would the decision change are valid. "+
@@ -2626,17 +2733,33 @@ function formatSelectedSource(chunks){
 
       if(isTooSimilarToRecent(parsed)){
         lastValidationError="The candidate was too similar to a recent question.";
-        continue;
+        // On a bounded retry, explicitly force a different reasoning angle
+        // instead of asking the model for the same question again.
+        if(attempt<1){
+          continue;
+        }
+        // Similarity is a planner signal, not a user-facing generation
+        // failure. The caller will sideline this concept and immediately
+        // try another pending concept.
+        let similarityError=new Error("The candidate was too similar to a recent question.");
+        similarityError.code="DUPLICATE_QUESTION";
+        similarityError.conceptId=plan.target ? plan.target.id : null;
+        similarityError.phase=plan.phase;
+        throw similarityError;
       }
 
       return parsed;
     }
 
-    throw new Error(
+    let generationError = new Error(
       "Could not generate a high-quality question after automatic retries."+
       (lastValidationError ? " Last quality check: " + lastValidationError : "")+
       " Please try again."
     );
+    generationError.conceptId = plan.target ? plan.target.id : null;
+    generationError.phase = plan.phase;
+    generationError.code = "QUALITY_FAILURE";
+    throw generationError;
   }
 
 
@@ -2990,7 +3113,8 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
       coverageFill.style.width=pct+"%";
       coverageMode.textContent="Concept coverage";
       coverageMode.className="coverage-mode";
-      coverageNote.textContent="Every discovered section is mapped. The quiz is now testing each important concept once before reinforcement.";
+      let blocked=(state.conceptOrder||[]).map(id=>state.concepts[id]).filter(c=>c && c.attempts===0 && (state.failedConceptAttempts?.[c.id]||0)>0).length;
+      coverageNote.textContent="Every discovered section is mapped. The quiz is now testing each important concept once before reinforcement."+(blocked?" Temporarily skipped concepts: "+blocked+" while another question is selected.":"");
     }else{
       let pct=100;
       coverageLabel.textContent=coveredConcepts+" / "+totalConcepts+" concepts";
@@ -3034,66 +3158,121 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
     questionCard.appendChild(retryBtn);
   }
 
+  function renderQuizExhausted(){
+    state.quizExhausted=true;
+    state.answered=false;
+    nextBtn.classList.add("hidden");
+    questionCard.innerHTML =
+      '<div class="feedback correct">' +
+      '<span class="verdict">QUIZ COMPLETE</span>' +
+      'No sufficiently distinct high-quality questions remain in the available question pool. ' +
+      'The quiz has ended rather than asking you to force another generation.' +
+      '</div>';
+    let resultsBtn=document.createElement("button");
+    resultsBtn.className="btn primary";
+    resultsBtn.style.marginTop="14px";
+    resultsBtn.textContent="See results";
+    resultsBtn.addEventListener("click",showResults);
+    questionCard.appendChild(resultsBtn);
+    updateCoverageUI();
+  }
+
   async function loadNextQuestion(){
+    if(state.quizExhausted) return;
     state.answered = false;
     nextBtn.classList.add("hidden");
     renderLoading();
     let lastError = null;
 
-    for(let attempt=0; attempt<1; attempt++){
+    // Never expose duplicate/similarity failures immediately. Try other
+    // pending concepts first. A user-facing ending is shown only after the
+    // remaining pool has been exhausted.
+    for(let attempt=0; attempt<12; attempt++){
       try {
         let q = await generateQuestion();
         state.currentQuestion = q;
-      state.askedTexts.push(q.question);
-      if (!Array.isArray(state.askedConcepts)) state.askedConcepts = [];
-      state.askedConcepts.push({
-        topic: q.topic,
-        subtopic: q.subtopic,
-        sourceFile: q.sourceFile,
-        sourcePage: q.sourcePage
-      });
+        state.askedTexts.push(q.question);
+        if (!Array.isArray(state.askedConcepts)) state.askedConcepts = [];
+        state.askedConcepts.push({
+          topic: q.topic,
+          subtopic: q.subtopic,
+          sourceFile: q.sourceFile,
+          sourcePage: q.sourcePage
+        });
 
-      if (!Array.isArray(state.coveredSourceIds)) state.coveredSourceIds = [];
-      (q._sourceChunkIds || []).forEach(id => {
-        if (!state.coveredSourceIds.includes(id)) state.coveredSourceIds.push(id);
-      });
+        if (!Array.isArray(state.coveredSourceIds)) state.coveredSourceIds = [];
+        (q._sourceChunkIds || []).forEach(id => {
+          if (!state.coveredSourceIds.includes(id)) state.coveredSourceIds.push(id);
+        });
 
-      // Discovery is folded into the question-generation call: the model
-      // returns a tiny important-concept inventory alongside the first
-      // question for a source section. This avoids a separate indexing call.
-      if (q._primaryChunkId != null && state.sourceChunks.some(c=>c && c.id===q._primaryChunkId) &&
-          Array.isArray(q.conceptInventory) && q.conceptInventory.length) {
-        addConceptInventory(q._primaryChunkId, q.conceptInventory);
-      }
-
-      let conceptId = null;
-      if (q._primaryChunkId != null) {
-        let ids = (state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
-        let normalized = String(q.conceptName||q.subtopic||"").trim().toLowerCase();
-        conceptId = ids.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
-        if (!conceptId && normalized) {
-          addConceptInventory(q._primaryChunkId,[{name:q.conceptName||q.subtopic,importance:q.conceptImportance||3}]);
-          let ids2=(state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
-          conceptId=ids2.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
+        if (q._primaryChunkId != null && state.sourceChunks.some(c=>c && c.id===q._primaryChunkId) &&
+            Array.isArray(q.conceptInventory) && q.conceptInventory.length) {
+          addConceptInventory(q._primaryChunkId, q.conceptInventory);
         }
-      }
-      q._conceptId=conceptId;
-      if (conceptId) {
-        state.lastConceptId=conceptId;
-        q.conceptName=state.concepts[conceptId].name;
-        q.conceptImportance=state.concepts[conceptId].importance;
-      }
-      state.questionNumber += 1;
+
+        let conceptId = null;
+        if (q._primaryChunkId != null) {
+          let ids = (state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
+          let normalized = String(q.conceptName||q.subtopic||"").trim().toLowerCase();
+          conceptId = ids.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
+          if (!conceptId && normalized) {
+            addConceptInventory(q._primaryChunkId,[{name:q.conceptName||q.subtopic,importance:q.conceptImportance||3}]);
+            let ids2=(state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
+            conceptId=ids2.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
+          }
+        }
+        q._conceptId=conceptId;
+        if (conceptId) {
+          if(state.failedConceptAttempts) delete state.failedConceptAttempts[conceptId];
+          if(state.exhaustedDuplicateConcepts) delete state.exhaustedDuplicateConcepts[conceptId];
+          state.lastConceptId=conceptId;
+          q.conceptName=state.concepts[conceptId].name;
+          q.conceptImportance=state.concepts[conceptId].importance;
+        }
+        state.questionNumber += 1;
 
         updateCoverageUI();
         renderQuestion(q);
         return;
       } catch(err) {
         lastError=err;
-        // No automatic second UI-level generation attempt.
-        // generateQuestion() already has one bounded retry.
+
+        if(err && err.code === "QUIZ_EXHAUSTED"){
+          renderQuizExhausted();
+          return;
+        }
+
+        if(err && err.conceptId){
+          state.failedConceptAttempts=state.failedConceptAttempts||{};
+          state.failedConceptAttempts[err.conceptId]=(state.failedConceptAttempts[err.conceptId]||0)+1;
+
+          if(err.code === "DUPLICATE_QUESTION"){
+            // One duplicate is enough to sideline this target for the current
+            // pass. Do not keep regenerating the same concept.
+            state.exhaustedDuplicateConcepts=state.exhaustedDuplicateConcepts||{};
+            state.exhaustedDuplicateConcepts[err.conceptId]=true;
+            lastError=null;
+            updateCoverageUI();
+            continue;
+          }
+        }
+
+        // Provider/parse/other failures remain real errors. Do not silently
+        // consume the user's quiz when the AI infrastructure is unavailable.
+        break;
       }
     }
+
+    // If all remaining concepts were silently sidestepped because their
+    // candidates were duplicates, the planner now treats that as completion.
+    try {
+      let pending=state.conceptOrder.map(id=>state.concepts[id]).filter(c=>c && c.attempts===0);
+      let viable=pending.filter(c=>!state.exhaustedDuplicateConcepts[c.id] && (state.failedConceptAttempts[c.id]||0)<2);
+      if(pending.length && viable.length===0){
+        renderQuizExhausted();
+        return;
+      }
+    } catch(_){}
 
     let message = lastError && lastError.message
       ? lastError.message
