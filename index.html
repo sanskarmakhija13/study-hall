@@ -2441,16 +2441,35 @@ function formatSelectedSource(chunks){
         return "Application context is generic study guidance rather than a substantive transfer problem.";
       }
 
-      let actionWords=/(decide|diagnose|recommend|choose|predict|explain|evaluate|assess|respond|design|prioriti[sz]e|negotiate|allocate|identify the cause|determine|what should .* do|which action)/i;
-      if(!actionWords.test(q.question)){
-        return "Application question does not require a meaningful decision, diagnosis, prediction, explanation, or other transfer of the concept.";
-      }
+      // Do not rely on a tiny list of literal verbs. Good application questions
+      // are often phrased as "most likely", "best explains", "what would happen",
+      // "which option is most appropriate", etc. Reject only questions that are
+      // clearly recall/navigation prompts.
+      let transferPatterns=[
+        /\b(decide|diagnose|recommend|choose|predict|explain|evaluate|assess|respond|design|prioriti[sz]e|negotiate|allocate|determine|apply|compare|infer|justify|interpret)\b/i,
+        /\bwhat (would|is likely to|is most likely to|would be expected to)\b/i,
+        /\bwhich (option|approach|strategy|action|response|decision|outcome|explanation|factor|result)\b/i,
+        /\b(best|most appropriate|most likely|least likely|most effective|most plausible)\b/i,
+        /\bhow would\b/i,
+        /\bwhat is the (best|most appropriate|most likely)\b/i,
+        /\bwhat would happen\b/i
+      ];
+      let hasTransferSignal=transferPatterns.some(r=>r.test(q.question));
+
       if(q.scenario && q.scenario.trim().length>0){
         let words=q.scenario.trim().split(/\s+/);
         let sentences=q.scenario.trim().split(/[.!?]+/).filter(Boolean);
         if(words.length<25 || sentences.length<2){
           return "The application case is too thin to test actual application.";
         }
+        // A sufficiently concrete case plus a non-trivial question is already
+        // strong evidence of transfer; don't fail it just because the model
+        // used a natural wording rather than one of our preferred verbs.
+        if(!hasTransferSignal && !/\b(why|how|which|what)\b/i.test(q.question)){
+          return "Application question does not clearly require transfer of the concept.";
+        }
+      } else if(!hasTransferSignal){
+        return "Application question does not clearly require a meaningful transfer of the concept.";
       }
     }
 
@@ -2564,7 +2583,7 @@ function formatSelectedSource(chunks){
           "\nGenerate a NEW candidate for the SAME target concept. "+
           "Keep the question concise and return complete valid JSON. "+
           "It must teach/test the underlying concept through a substantive transfer problem, not document navigation or study guidance. "+
-          "If this is application mode, use a realistic situation or decision and require the learner to apply, diagnose, predict, compare, or recommend. "+
+          "If this is application mode, use a realistic situation or decision and require the learner to apply the concept. Natural question forms such as which approach is most appropriate, what is most likely to happen, what best explains the outcome, or how would the decision change are valid. "+
           "Do not reveal the answer in the wording, and use plausible, parallel answer choices if it is an MCQ.";
       }
 
