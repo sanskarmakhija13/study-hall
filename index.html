@@ -2204,8 +2204,41 @@
     state.conceptOrder = Array.isArray(state.conceptOrder) ? state.conceptOrder : [];
   }
 
+  function canonicalConceptName(name){
+    let s=String(name||"").trim().toLowerCase();
+    s=s.replace(/\b(zone|region|area)\s+of\s+indifference\b/g,"indifference band");
+    s=s.replace(/\bindifference\s+(zone|region|area|bands?)\b/g,"indifference band");
+    s=s.replace(/\bbands?\s+of\s+indifference\b/g,"indifference band");
+    s=s.replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+    return s.replace(/\b(concept|framework|model|theory|principle|mechanism|approach)\b/g," ")
+      .replace(/\s+/g," ").trim();
+  }
+
+  function conceptNameSimilarity(a,b){
+    let A=new Set(canonicalConceptName(a).split(/\s+/).filter(Boolean));
+    let B=new Set(canonicalConceptName(b).split(/\s+/).filter(Boolean));
+    if(!A.size || !B.size) return 0;
+    let inter=0; A.forEach(x=>{if(B.has(x)) inter++;});
+    return inter/Math.max(1,Math.min(A.size,B.size));
+  }
+
+  function findMatchingConceptId(chunkId,name){
+    let chunk=state.sourceChunks.find(c=>c && c.id===chunkId);
+    if(!chunk) return null;
+    let wanted=canonicalConceptName(name);
+    if(!wanted) return null;
+    let exact=(chunk.conceptIds||[]).find(id=>canonicalConceptName(state.concepts[id]?.name)===wanted);
+    if(exact) return exact;
+    let best=null, bestScore=0;
+    for(let id of (chunk.conceptIds||[])){
+      let score=conceptNameSimilarity(name,state.concepts[id]?.name||"");
+      if(score>bestScore){bestScore=score;best=id;}
+    }
+    return bestScore>=0.8 ? best : null;
+  }
+
   function conceptKey(chunkId, name){
-    return String(chunkId) + "::" + String(name || "").trim().toLowerCase();
+    return String(chunkId) + "::" + canonicalConceptName(name);
   }
 
   function getConceptsForChunk(chunkId){
@@ -2224,7 +2257,7 @@
       let name=String(raw?.name || raw?.concept || "").trim();
       if(!name) return;
 
-      let id=conceptKey(chunkId,name);
+      let id=findMatchingConceptId(chunkId,name) || conceptKey(chunkId,name);
       if(!state.concepts[id]){
         state.concepts[id]={
           id,
@@ -2322,7 +2355,20 @@
     // declare the question pool exhausted.
 
     if (uncovered.length) {
-      let target = chooseBestConcept(uncovered, state.lastConceptId) || uncovered[0];
+      // During first-pass coverage, strongly prefer a genuinely different
+      // concept family from the last couple of questions. This prevents a
+      // PDF section such as "indifference band" from monopolizing the quiz
+      // just because the model produced several near-synonymous concept
+      // labels. If no diverse concept exists, fall back to the full pending
+      // pool rather than falsely declaring the source exhausted.
+      let recentNames=state.history.slice(-2).map(h=>h.conceptName||h.subtopic||"").filter(Boolean);
+      let diverseUncovered=uncovered.filter(function(c){
+        return recentNames.every(function(name){
+          return conceptNameSimilarity(c.name,name)<0.8;
+        });
+      });
+      let coveragePool=diverseUncovered.length ? diverseUncovered : uncovered;
+      let target = chooseBestConcept(coveragePool, state.lastConceptId) || coveragePool[0] || uncovered[0];
       let primary = state.sourceChunks.find(function(c){
         return c && c.id === target.chunkId;
       }) || state.sourceChunks[0];
@@ -2633,7 +2679,7 @@ function formatSelectedSource(chunks){
       "Prefer questions that test WHY, HOW, WHEN, WHICH consequence, trade-off, mechanism, distinction, diagnosis, or choice under constraints—not questions that merely repeat a sentence from the source.";
 
     if(plan.phase==="DISCOVERY"){
-      system+=" This is a DISCOVERY call for a new source section. Identify the 3-4 most important/exam-worthy concepts from this section and test the single most important concept first. Do not list trivial details. The question must still require the learner to think; do not copy a source sentence into the question.";
+      system+=" This is a DISCOVERY call for a new source section. Identify the 3-4 most important/exam-worthy concepts from this section and test the single most important concept first. Do not list trivial details. The concepts in conceptInventory MUST be genuinely distinct concepts or mechanisms, not synonyms, examples, subparts, or repeated variants of the same idea. For example, do not list indifference band, indifference zone, and zone of indifference as three concepts. The question must still require the learner to think; do not copy a source sentence into the question.";
     }else if(plan.phase==="CONCEPT_COVERAGE"){
       system+=" This is the CONCEPT COVERAGE phase. The target concept below has not yet been tested; test that concept specifically. Prioritize conceptual clarity over trivia and do not reveal the answer in the stem.";
     }else{
@@ -2748,6 +2794,7 @@ function formatSelectedSource(chunks){
         throw similarityError;
       }
 
+      if(parsed.type==="mcq") randomizeMcqOptions(parsed);
       return parsed;
     }
 
@@ -3141,6 +3188,29 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
     coverageToggle.textContent=hidden?"Show coverage map":"Hide coverage map";
   });
 
+  // Randomize MCQ answer positions after all quality checks so model position
+  // bias cannot make option A disproportionately correct.
+  function randomizeMcqOptions(q){
+    if(!q || q.type!=="mcq" || !Array.isArray(q.options) || q.options.length!==4) return q;
+    let originalCorrect=q.correctIndex;
+    let pairs=q.options.map((text,index)=>({text,index}));
+    let previousIndex=state.lastCorrectIndex;
+    for(let attempt=0;attempt<8;attempt++){
+      for(let i=pairs.length-1;i>0;i--){
+        let j=Math.floor(Math.random()*(i+1));
+        [pairs[i],pairs[j]]=[pairs[j],pairs[i]];
+      }
+      let candidate=pairs.findIndex(x=>x.index===originalCorrect);
+      if(previousIndex==null || candidate!==previousIndex || attempt===7){
+        q.options=pairs.map(x=>x.text);
+        q.correctIndex=candidate;
+        state.lastCorrectIndex=candidate;
+        return q;
+      }
+    }
+    return q;
+  }
+
   // ---------------- rendering the question ----------------
   function renderLoading(){
     questionCard.innerHTML = '<div class="loading-line"><span class="pencil-spin"></span><span>Writing the next question...</span></div>';
@@ -3212,13 +3282,11 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
 
         let conceptId = null;
         if (q._primaryChunkId != null) {
-          let ids = (state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
-          let normalized = String(q.conceptName||q.subtopic||"").trim().toLowerCase();
-          conceptId = ids.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
-          if (!conceptId && normalized) {
-            addConceptInventory(q._primaryChunkId,[{name:q.conceptName||q.subtopic,importance:q.conceptImportance||3}]);
-            let ids2=(state.sourceChunks.find(c=>c.id===q._primaryChunkId)?.conceptIds)||[];
-            conceptId=ids2.find(id=>String(state.concepts[id]?.name||"").trim().toLowerCase()===normalized) || null;
+          let conceptLabel = q.conceptName||q.subtopic||"";
+          conceptId = findMatchingConceptId(q._primaryChunkId,conceptLabel);
+          if (!conceptId && String(conceptLabel).trim()) {
+            addConceptInventory(q._primaryChunkId,[{name:conceptLabel,importance:q.conceptImportance||3}]);
+            conceptId=findMatchingConceptId(q._primaryChunkId,conceptLabel);
           }
         }
         q._conceptId=conceptId;
@@ -3442,7 +3510,8 @@ conceptInventory is required only for DISCOVERY; otherwise return [].`;
       verdict: verdict,
       explanation: explanation,
       userAnswer: userAnswer || "",
-      correctAnswer: correctAnswer || q.idealAnswer || ""
+      correctAnswer: correctAnswer || q.idealAnswer || "",
+      correctIndex: q.type==="mcq" ? q.correctIndex : null
     });
     updateScoreUI();
     addScantronBubble(isCorrect);
